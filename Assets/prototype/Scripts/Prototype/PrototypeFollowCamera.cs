@@ -39,16 +39,38 @@ namespace TwoTails.Prototype
         private float zoomVelocity;
         private float obstructionLimit;
         private float obstructionVelocity;
+        private Vector3 menuPosition;
+        private Quaternion menuRotation;
 
         private float DistanceLimit => Mathf.Max(minimumDistance, maximumDistance);
 
-        private void Start()
+        private void Awake()
+        {
+            menuPosition = transform.position;
+            menuRotation = transform.rotation;
+        }
+
+        private void Start() => ResetOrbit();
+
+        public void Bind(Transform player, Transform facing)
+        {
+            target = player;
+            spawnFacing = facing;
+            if (target == null)
+                transform.SetPositionAndRotation(menuPosition, menuRotation);
+            else
+                ResetOrbit();
+        }
+
+        private void ResetOrbit()
         {
             if (target == null)
                 return;
 
             desiredYaw = yaw = (spawnFacing != null ? spawnFacing : target).eulerAngles.y;
             desiredPitch = pitch = Mathf.Clamp(initialPitch, minimumPitch, maximumPitch);
+            pivotVelocity = Vector3.zero;
+            yawVelocity = pitchVelocity = zoomVelocity = obstructionVelocity = 0f;
             pivot = target.position + Vector3.up * pivotHeight;
             desiredDistance = zoomDistance = Mathf.Clamp(distance, minimumDistance, DistanceLimit);
             obstructionLimit = DistanceLimit;

@@ -33,6 +33,12 @@ namespace TwoTails.Prototype
             moveInput = Vector2.ClampMagnitude(input, 1f);
         }
 
+        public void SetLocalContext(Transform camera)
+        {
+            movementCamera = camera;
+            spawnPosition = transform.position;
+        }
+
         private void OnDisable()
         {
             moveInput = Vector2.zero;

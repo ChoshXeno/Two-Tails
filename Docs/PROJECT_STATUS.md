@@ -11,7 +11,7 @@ Two Tails is a mobile two-player cooperative animal puzzle game. Players combine
 
 ### Package inventory
 
-Checked `Packages/manifest.json` and `Packages/packages-lock.json` on November 8, 2026. Installed versions match in both files.
+Checked `Packages/manifest.json` and `Packages/packages-lock.json` on November 9, 2026. Transport resolves transitively.
 
 | Package | Status |
 | --- | --- |
@@ -19,10 +19,10 @@ Checked `Packages/manifest.json` and `Packages/packages-lock.json` on November 8
 | Universal RP (`com.unity.render-pipelines.universal`) | Installed `17.6.0` |
 | JetBrains Rider integration (`com.unity.ide.rider`) | Installed `3.1.0` |
 | Unity Pipeline (`com.unity.pipeline`) | Installed `0.10.0-exp.1` |
-| Netcode for GameObjects (`com.unity.netcode.gameobjects`) | Missing from both files |
-| Unity Transport (`com.unity.transport`) | Missing from both files |
+| Netcode for GameObjects (`com.unity.netcode.gameobjects`) | Installed `2.13.3` |
+| Unity Transport (`com.unity.transport`) | Resolved `6.6.0` |
 | Multiplayer Services (`com.unity.services.multiplayer`) | Missing from both files |
-| Multiplayer Play Mode (`com.unity.multiplayer.playmode`) | Missing from both files |
+| Multiplayer Play Mode (`com.unity.multiplayer.playmode`) | Installed `3.0.0` |
 
 ## Completed work and evidence
 
@@ -35,14 +35,19 @@ Checked `Packages/manifest.json` and `Packages/packages-lock.json` on November 8
 
 ## Current task and outstanding work
 
-**Prototype — Local greybox.** Implemented. The scene has independent lever and two-plate doors, a P1 orbit and zoom camera, an English HUD, and an Editor/Development-only P2 test character. See [Prototype Greybox](Prototype_Greybox.md) for configuration, asset conventions, and acceptance checks.
+**T02 — Local greybox.** Reported complete by the user. The scene has independent lever and two-plate doors, a P1 orbit and zoom camera, an English HUD, and an Editor/Development-only P2 test character. See [Prototype Greybox](Prototype_Greybox.md) for configuration, asset conventions, and acceptance checks.
 
 - **Implemented.** The lever toggles its door and the plates use distinct-character AND occupancy to control a separate door. Both doors reverse smoothly. The camera supports wheel and pinch zoom without changing FOV.
 - **Verified.** Current Play Mode probes passed the plate truth table and occupancy cleanup, lever input and reversal, independent doors, panel collider recovery, and desktop wheel zoom with UI isolation and obstruction recovery. A prior non-development Windows player launched the prototype with only one active character and no active P2.
 - **Awaiting testing on a physical device.** Confirm the iPhone build, signing, and installation path. Verify pinch, simultaneous touches, the safe area, and background/resume.
-- The prototype uses installed Input System `1.20.1` and uGUI `2.6.0`. The missing multiplayer packages belong to later milestones.
+- The prototype uses installed Input System `1.20.1` and uGUI `2.6.0`.
+
+**T03 — Local Host/Client movement.** Implemented in the separate network scene and Windows Network Prototype build profile. NGO automatically spawns one player per approved connection. Owners drive movement, the root position and visual yaw replicate, and the server assigns both player slots. See [T03 local networking](T03_Network.md) for setup and validation.
+
+- **Verified.** Editor Host and independent headless Windows Development Players passed three connection, disconnect, and rejoin cycles. Both owners' movement and visible facing replicated. Late-join position, color, independent camera state, capacity rejection, wrong-port recovery, and local greybox regression passed.
+- **Awaiting interactive and physical-device testing.** Two visible windows, real focus switching, and network-scene touch remain pending.
 
 ## Next steps and acceptance criteria
 
-1. Open Prototype Greybox and complete the manual acceptance checks in [Prototype Greybox](Prototype_Greybox.md).
-2. Verify the physical iPhone controls and record the device and test results. T03 is a separate task.
+1. Run the remaining interactive and device checks in [T03 local networking](T03_Network.md).
+2. T04 will add Host-validated puzzle state. T05 will add Relay and invite codes.
