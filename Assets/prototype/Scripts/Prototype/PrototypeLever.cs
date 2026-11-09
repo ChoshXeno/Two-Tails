@@ -33,9 +33,14 @@ namespace TwoTails.Prototype
             lastFrame = Time.frameCount;
             nextToggleTime = Time.time + debounce;
             door.SetOpen(!door.TargetOpen);
-            if (handle != null)
-                handle.localRotation = restRotation * Quaternion.Euler(door.TargetOpen ? pullAngle : 0f, 0f, 0f);
+            ApplyTargetPose(door.TargetOpen);
             return true;
+        }
+
+        public void ApplyTargetPose(bool open)
+        {
+            if (handle != null)
+                handle.localRotation = restRotation * Quaternion.Euler(open ? pullAngle : 0f, 0f, 0f);
         }
     }
 }

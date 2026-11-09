@@ -9,6 +9,7 @@ namespace TwoTails.Prototype
         [SerializeField] private Renderer capsule;
         [SerializeField] private Material hostMaterial;
         [SerializeField] private Material clientMaterial;
+        [SerializeField] private CapsuleCollider serverProxy;
 
         private readonly NetworkVariable<byte> slot = new();
         private PrototypeNetworkSession session;
@@ -38,6 +39,8 @@ namespace TwoTails.Prototype
                 Motor.enabled = true;
                 input.enabled = true;
             }
+            if (serverProxy != null)
+                serverProxy.enabled = IsServer && !IsOwner;
 
             session.Register(this, IsOwner);
         }
@@ -48,6 +51,8 @@ namespace TwoTails.Prototype
             input.enabled = false;
             Motor.enabled = false;
             controller.enabled = false;
+            if (serverProxy != null)
+                serverProxy.enabled = false;
             if (session != null)
                 session.Unregister(this);
         }

@@ -15,6 +15,7 @@ GameObject:
   - component: {fileID: 3808939721052944805}
   - component: {fileID: 8980305566776432743}
   - component: {fileID: 448037510740778892}
+  - component: {fileID: 1064176699982632888}
   m_Layer: 2
   m_Name: NetworkPlayerPrototype
   m_TagString: Untagged
@@ -36,6 +37,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 8579513218897334721}
+  - {fileID: 8006101424610407199}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!143 &7234522681414917927
@@ -185,6 +187,21 @@ MonoBehaviour:
   capsule: {fileID: 5849099002454103472}
   hostMaterial: {fileID: 2100000, guid: 2fea2519183567a46bf25622c84b5c80, type: 2}
   clientMaterial: {fileID: 2100000, guid: 44f0f11b122a3fc4fb54b9757e50f9e0, type: 2}
+  serverProxy: {fileID: 8099183162665763846}
+--- !u!114 &1064176699982632888
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 216471887066900169}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b6db1dfc8a5d10140ab915712b0358c5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TwoTails.Prototype.PrototypeNetworkInteraction
+  ShowTopMostFoldoutHeaderGroup: 1
+  interactionOrigin: {fileID: 590788491424371970}
 --- !u!1 &1948713233361753325
 GameObject:
   m_ObjectHideFlags: 0
@@ -216,6 +233,61 @@ Transform:
   m_Children: []
   m_Father: {fileID: 8579513218897334721}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &2720601963410239855
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8006101424610407199}
+  - component: {fileID: 8099183162665763846}
+  m_Layer: 2
+  m_Name: Server Puzzle Proxy
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8006101424610407199
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2720601963410239855}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 7450485759572507833}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!136 &8099183162665763846
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2720601963410239855}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 0
+  serializedVersion: 2
+  m_Radius: 0.4
+  m_Height: 2
+  m_Direction: 1
+  m_Center: {x: 0, y: 1, z: 0}
 --- !u!1 &4414104246107651489
 GameObject:
   m_ObjectHideFlags: 0

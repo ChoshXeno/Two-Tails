@@ -35,6 +35,8 @@ Checked `Packages/manifest.json` and `Packages/packages-lock.json` on November 9
 
 ## Current task and outstanding work
 
+**T04 localhost connection follow-up (November 9, 2026).** The Windows player log identified the T03 executable, and the Editor Host logged `NetworkConfig mismatch`. The old network scene disabled NGO scene management and the current T04 scene enables it. A matching independent T04 Windows QA client connected to the live Editor Host on `127.0.0.1:7777`; both processes reported two players. The current T04 Windows player was opened for manual use. See [T04 network puzzles](T04_Network_Puzzles.md) for the executable path and rebuild steps.
+
 **T02 — Local greybox.** Reported complete by the user. The scene has independent lever and two-plate doors, a P1 orbit and zoom camera, an English HUD, and an Editor/Development-only P2 test character. See [Prototype Greybox](Prototype_Greybox.md) for configuration, asset conventions, and acceptance checks.
 
 - **Implemented.** The lever toggles its door and the plates use distinct-character AND occupancy to control a separate door. Both doors reverse smoothly. The camera supports wheel and pinch zoom without changing FOV.
@@ -42,12 +44,17 @@ Checked `Packages/manifest.json` and `Packages/packages-lock.json` on November 9
 - **Awaiting testing on a physical device.** Confirm the iPhone build, signing, and installation path. Verify pinch, simultaneous touches, the safe area, and background/resume.
 - The prototype uses installed Input System `1.20.1` and uGUI `2.6.0`.
 
-**T03 — Local Host/Client movement.** Implemented in the separate network scene and Windows Network Prototype build profile. NGO automatically spawns one player per approved connection. Owners drive movement, the root position and visual yaw replicate, and the server assigns both player slots. See [T03 local networking](T03_Network.md) for setup and validation.
+**T03 — Local Host/Client movement.** Reported fully accepted by the user. NGO automatically spawns one player per approved connection. Owners drive movement, the root position and visual yaw replicate, and the server assigns both player slots. See [T03 local networking](T03_Network.md) for setup and validation.
 
 - **Verified.** Editor Host and independent headless Windows Development Players passed three connection, disconnect, and rejoin cycles. Both owners' movement and visible facing replicated. Late-join position, color, independent camera state, capacity rejection, wrong-port recovery, and local greybox regression passed.
-- **Awaiting interactive and physical-device testing.** Two visible windows, real focus switching, and network-scene touch remain pending.
+- **Historical evidence scope.** The recorded T03 automation used headless Windows Development Players. It did not independently test physical-device touch.
+
+**T04 — Network puzzles.** Implemented. [T04 network puzzles](T04_Network_Puzzles.md) records the authority, scene setup, and acceptance tests. The independent Lever and two-plate doors use server-write state. A server-only trigger proxy lets the Host detect the remote player's plate and passage occupancy.
+
+- **Verified.** Editor Host and independent headless Windows Development Client passed the Lever and two-plate tests, including rejection/cooldown, late join, disconnection cleanup, three rejoin rounds, and synchronized anti-crush pause/resume. Editor input and local Lever regressions passed.
+- **Awaiting interactive and physical-device testing.** Two visible windows, touch controls, and a join during an in-progress door transition remain manual checks.
 
 ## Next steps and acceptance criteria
 
-1. Run the remaining interactive and device checks in [T03 local networking](T03_Network.md).
-2. T04 will add Host-validated puzzle state. T05 will add Relay and invite codes.
+1. Run remaining physical-device and interactive checks in [T04 network puzzles](T04_Network_Puzzles.md).
+2. T05 will add Relay and invite codes.

@@ -20,6 +20,8 @@ namespace TwoTails.Prototype
         private Vector3 restPosition;
         public int OccupantCount => occupants.Count;
 
+        public void ApplyOccupiedVisual(bool occupied) => UpdateVisual(occupied);
+
         private void Awake()
         {
             trigger = GetComponent<BoxCollider>();

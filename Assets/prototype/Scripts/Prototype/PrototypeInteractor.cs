@@ -58,7 +58,8 @@ namespace TwoTails.Prototype
 
                 Vector3 offset = lever.Position - interactionOrigin.position;
                 float distance = offset.magnitude;
-                if (distance > maximumDistance || IsBlocked(lever, offset, distance))
+                if (distance > maximumDistance || IsBlocked(interactionOrigin.position, offset, distance,
+                        transform, lever.transform, visibilityMask, hits))
                     continue;
 
                 Vector3 horizontal = Vector3.ProjectOnPlane(offset, Vector3.up);
@@ -79,12 +80,13 @@ namespace TwoTails.Prototype
             return best;
         }
 
-        private bool IsBlocked(PrototypeLever lever, Vector3 offset, float distance)
+        internal static bool IsBlocked(Vector3 origin, Vector3 offset, float distance, Transform actor,
+            Transform target, LayerMask visibilityMask, RaycastHit[] hits)
         {
             if (distance <= Mathf.Epsilon)
                 return false;
 
-            var ray = new Ray(interactionOrigin.position, offset / distance);
+            var ray = new Ray(origin, offset / distance);
             int count = Physics.RaycastNonAlloc(ray, hits, distance, visibilityMask, QueryTriggerInteraction.Ignore);
             RaycastHit[] results = count == hits.Length
                 ? Physics.RaycastAll(ray, distance, visibilityMask, QueryTriggerInteraction.Ignore)
@@ -95,7 +97,7 @@ namespace TwoTails.Prototype
             for (int index = 0; index < count; index++)
             {
                 Transform hitTransform = results[index].collider.transform;
-                if (!hitTransform.IsChildOf(transform) && !hitTransform.IsChildOf(lever.transform))
+                if (!hitTransform.IsChildOf(actor) && !hitTransform.IsChildOf(target))
                     return true;
             }
 

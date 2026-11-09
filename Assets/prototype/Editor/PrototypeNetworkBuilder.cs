@@ -51,6 +51,8 @@ namespace TwoTails.Editor
             try
             {
                 Configure(scene);
+                PrototypeNetworkPuzzleSetup.Configure(scene);
+                PrototypeNetworkPuzzleSetup.ConfigurePlates(scene);
                 if (!EditorSceneManager.SaveScene(scene))
                     throw new InvalidOperationException("Could not save the network prototype.");
             }
@@ -61,6 +63,7 @@ namespace TwoTails.Editor
             }
 
             CreateProfile();
+            PrototypeNetworkPuzzleSetup.RegisterEditorScene();
         }
 
         private static void Configure(Scene scene)

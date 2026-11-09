@@ -16,6 +16,12 @@ namespace TwoTails.Prototype
         private bool contactBypass;
         public bool TargetOpen { get; private set; }
         public bool IsMoving => progress != (TargetOpen ? 1f : 0f);
+        public float TravelDuration => openDuration;
+
+        public void ApplyTravel(float value)
+        {
+            transform.localPosition = closedPosition + Vector3.up * (openHeight * Mathf.Clamp01(value));
+        }
 
         private void Awake()
         {

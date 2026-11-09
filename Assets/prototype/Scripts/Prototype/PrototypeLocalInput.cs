@@ -18,6 +18,7 @@ namespace TwoTails.Prototype
         private PrototypeMotor motor;
         private bool hasFocus;
         private bool waitForNeutral;
+        public event System.Action InteractionPressed;
 
         private void Awake()
         {
@@ -74,8 +75,12 @@ namespace TwoTails.Prototype
 
         private void OnInteract(InputAction.CallbackContext context)
         {
-            if (hasFocus && interactor != null)
+            if (!hasFocus)
+                return;
+
+            if (interactor != null)
                 interactor.TryInteract();
+            InteractionPressed?.Invoke();
         }
     }
 }
