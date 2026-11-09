@@ -1,5 +1,7 @@
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
+using UnityEngine.UI;
 
 namespace TwoTails.Prototype
 {
@@ -18,6 +20,8 @@ namespace TwoTails.Prototype
         private PrototypeMotor motor;
         private bool hasFocus;
         private bool waitForNeutral;
+        private static bool EditingText => EventSystem.current?.currentSelectedGameObject?
+            .GetComponent<InputField>()?.isFocused == true;
         public event System.Action InteractionPressed;
 
         private void Awake()
@@ -62,6 +66,12 @@ namespace TwoTails.Prototype
         {
             if (!hasFocus)
                 return;
+            if (EditingText)
+            {
+                waitForNeutral = true;
+                motor.SetMoveInput(Vector2.zero);
+                return;
+            }
 
             Vector2 input = move.ReadValue<Vector2>();
             if (waitForNeutral)
@@ -75,7 +85,7 @@ namespace TwoTails.Prototype
 
         private void OnInteract(InputAction.CallbackContext context)
         {
-            if (!hasFocus)
+            if (!hasFocus || EditingText)
                 return;
 
             if (interactor != null)

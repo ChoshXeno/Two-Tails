@@ -19,6 +19,19 @@ namespace TwoTails.Editor
         private const string NetworkPrefab = "Assets/prototype/Prefabs/NetworkPlayerPrototype.prefab";
         private const string Profile = "Assets/Settings/Build Profiles/Windows Network Prototype.asset";
 
+        [MenuItem("Tools/Two Tails/Configure Online Rooms")]
+        public static void ConfigureOnlineRooms()
+        {
+            Scene scene = SceneManager.GetActiveScene();
+            if (EditorApplication.isPlayingOrWillChangePlaymode || scene.path != NetworkScene || scene.isDirty)
+                throw new InvalidOperationException("Open the saved network prototype in Edit Mode first.");
+            var hud = scene.GetRootGameObjects().SelectMany(root => root.GetComponentsInChildren<PrototypeNetworkHud>(true)).Single();
+            var session = scene.GetRootGameObjects().Select(root => root.GetComponent<PrototypeNetworkSession>()).Single(item => item != null);
+            AddOnlineControls(hud, session);
+            if (scene.isDirty)
+                EditorSceneManager.SaveScene(scene);
+        }
+
         [MenuItem("Tools/Two Tails/Build Network Prototype")]
         public static void Build()
         {
@@ -53,6 +66,9 @@ namespace TwoTails.Editor
                 Configure(scene);
                 PrototypeNetworkPuzzleSetup.Configure(scene);
                 PrototypeNetworkPuzzleSetup.ConfigurePlates(scene);
+                var hud = scene.GetRootGameObjects().SelectMany(root => root.GetComponentsInChildren<PrototypeNetworkHud>(true)).Single();
+                var session = scene.GetRootGameObjects().Select(root => root.GetComponent<PrototypeNetworkSession>()).Single(item => item != null);
+                AddOnlineControls(hud, session);
                 if (!EditorSceneManager.SaveScene(scene))
                     throw new InvalidOperationException("Could not save the network prototype.");
             }
@@ -195,6 +211,55 @@ namespace TwoTails.Editor
             SetReference(hud, "players", TextAt(panel, font, "Players: 0/2", 0, -99, 760, 22));
         }
 
+        private static void AddOnlineControls(PrototypeNetworkHud hud, PrototypeNetworkSession session)
+        {
+            var serialized = new SerializedObject(hud);
+            if (serialized.FindProperty("online").objectReferenceValue != null)
+                return;
+            var panel = (RectTransform)hud.transform;
+            var font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            var online = session.gameObject.AddComponent<PrototypeOnlineRoom>();
+            var direct = Corner("Direct Test Controls", panel, Vector2.one * 0.5f, Vector2.zero, panel.sizeDelta);
+            foreach (string name in new[] { "Address", "Port", "Start Host", "Start Client", "Disconnect" })
+            {
+                foreach (Transform child in panel.Cast<Transform>().Where(child => child.name == name).ToArray())
+                    child.SetParent(direct, false);
+            }
+            var controls = Corner("Online Relay Controls", panel, Vector2.one * 0.5f, Vector2.zero, panel.sizeDelta);
+            var title = panel.GetComponentsInChildren<UnityEngine.UI.Text>().Single(label => label.text == "Network puzzle test");
+            ((RectTransform)title.transform.parent).sizeDelta = new Vector2(330, 38);
+            ((RectTransform)title.transform.parent).anchoredPosition = new Vector2(-210, 94);
+            title.text = "Online Relay";
+            var mode = Button(panel, font, "Direct Test", 269, 94, 210);
+            var input = Field(controls, "Join Code", "", -110, 200);
+            var placeholder = (UnityEngine.UI.Text)input.placeholder;
+            placeholder.text = "Join Code";
+            placeholder.font = input.textComponent.font = font;
+            placeholder.fontSize = 22;
+            TextAt(controls, font, "Join Code", -278, 43, 116, 22);
+            var leave = Button(controls, font, "Leave Room", 278, -12, 184);
+            var copy = Button(controls, font, "Copy Code", 269, 43, 184);
+            var code = TextAt(controls, font, "", 76, 43, 172, 19);
+            var playerId = TextAt(controls, font, "", -242, -99, 250, 18);
+
+            SetReference(hud, "online", online);
+            SetReference(hud, "directControls", direct.gameObject);
+            SetReference(hud, "onlineControls", controls.gameObject);
+            SetReference(hud, "switchMode", mode);
+            SetReference(hud, "modeLabel", mode.GetComponentInChildren<UnityEngine.UI.Text>());
+            SetReference(hud, "title", title);
+            SetReference(hud, "joinCode", input);
+            SetReference(hud, "createRoom", Button(controls, font, "Create Room", -278, -12, 184));
+            SetReference(hud, "joinRoom", Button(controls, font, "Join Room", -68, -12, 184));
+            SetReference(hud, "copyCode", copy);
+            SetReference(hud, "leaveRoom", leave);
+            SetReference(hud, "leaveLabel", leave.GetComponentInChildren<UnityEngine.UI.Text>());
+            SetReference(hud, "invite", code);
+            SetReference(hud, "identity", playerId);
+            direct.gameObject.SetActive(false);
+            EditorSceneManager.MarkSceneDirty(hud.gameObject.scene);
+        }
+
         private static UnityEngine.UI.Text TextAt(Transform parent, Font font, string text, float x, float y, float width, int size)
         {
             var rect = Corner(text, parent, Vector2.one * 0.5f, new Vector2(x, y), new Vector2(width, 38));
@@ -216,9 +281,9 @@ namespace TwoTails.Editor
             return field;
         }
 
-        private static UnityEngine.UI.Button Button(Transform parent, Font font, string text, float x)
+        private static UnityEngine.UI.Button Button(Transform parent, Font font, string text, float x, float y = -12, float width = 206)
         {
-            var rect = Corner(text, parent, Vector2.one * 0.5f, new Vector2(x, -12), new Vector2(206, 48));
+            var rect = Corner(text, parent, Vector2.one * 0.5f, new Vector2(x, y), new Vector2(width, 44));
             var image = rect.gameObject.AddComponent<UnityEngine.UI.Image>();
             image.color = new Color(0.17f, 0.34f, 0.53f);
             var button = rect.gameObject.AddComponent<UnityEngine.UI.Button>();

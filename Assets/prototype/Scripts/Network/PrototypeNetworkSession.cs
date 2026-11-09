@@ -25,15 +25,19 @@ namespace TwoTails.Prototype
         private bool starting;
         private bool stopping;
         private bool connected;
+        private bool onlineReserved;
         private bool previousRunInBackground;
         private float deadline;
 
         public string Status { get; private set; } = "Offline";
-        public bool CanStart => !starting && !stopping && !manager.IsListening && !manager.ShutdownInProgress;
-        public bool CanDisconnect => !stopping && (starting || manager.IsListening);
+        public bool NetworkIdle => !starting && !stopping && !manager.IsListening && !manager.ShutdownInProgress;
+        public bool CanStart => !onlineReserved && NetworkIdle;
+        public bool CanDisconnect => !onlineReserved && !stopping && (starting || manager.IsListening);
+        public bool LocalConnected => connected && LocalPlayer != null && manager.IsConnectedClient;
         public int PlayerCount => players.Count;
         public NetworkPlayerPrototype LocalPlayer { get; private set; }
         public event Action Changed;
+        public event Action<string> OnlineConnectionLost;
 
         private void Awake()
         {
@@ -94,6 +98,28 @@ namespace TwoTails.Prototype
                 Stop("Disconnected");
         }
 
+        internal bool ReserveOnline()
+        {
+            if (!CanStart)
+                return false;
+            ResetPlayers();
+            onlineReserved = true;
+            return true;
+        }
+
+        internal void ShutdownOnline()
+        {
+            if (onlineReserved && manager.IsListening && !manager.ShutdownInProgress)
+                manager.Shutdown();
+        }
+
+        internal void ReleaseOnline()
+        {
+            ResetPlayers();
+            onlineReserved = false;
+            Changed?.Invoke();
+        }
+
         private void Update()
         {
             if (starting && Time.realtimeSinceStartup >= deadline)
@@ -103,10 +129,16 @@ namespace TwoTails.Prototype
                 return;
 
             stopping = false;
+            ResetPlayers();
+            Changed?.Invoke();
+        }
+
+        private void ResetPlayers()
+        {
+            connected = false;
             Array.Clear(slots, 0, slots.Length);
             players.Clear();
             LocalPlayer = null;
-            Changed?.Invoke();
         }
 
         private void Approve(NetworkManager.ConnectionApprovalRequest request, NetworkManager.ConnectionApprovalResponse response)
@@ -136,7 +168,10 @@ namespace TwoTails.Prototype
 
             starting = false;
             connected = true;
-            SetStatus("Connected");
+            if (onlineReserved)
+                Changed?.Invoke();
+            else
+                SetStatus("Connected");
         }
 
         private void Disconnected(ulong id)
@@ -148,12 +183,25 @@ namespace TwoTails.Prototype
                 return;
 
             string reason = manager.DisconnectReason;
+            if (onlineReserved)
+            {
+                bool wasConnected = connected;
+                connected = false;
+                OnlineConnectionLost?.Invoke(reason?.Contains(Full) == true ? "Room is full" :
+                    wasConnected && !manager.IsHost ? "Host left the room" : "Unable to connect");
+                return;
+            }
             Stop(!string.IsNullOrEmpty(reason) && reason.Contains(Full) ? Full :
                 connected ? "Disconnected" : "Connection Failed: Could not reach the host.");
         }
 
         private void TransportFailed()
         {
+            if (onlineReserved)
+            {
+                OnlineConnectionLost?.Invoke("Unable to connect");
+                return;
+            }
             if (!stopping)
                 Stop("Connection Failed: Transport error.");
         }

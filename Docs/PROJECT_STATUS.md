@@ -11,7 +11,7 @@ Two Tails is a mobile two-player cooperative animal puzzle game. Players combine
 
 ### Package inventory
 
-Checked `Packages/manifest.json` and `Packages/packages-lock.json` on November 9, 2026. Transport resolves transitively.
+Checked `Packages/manifest.json` and `Packages/packages-lock.json` on November 9, 2026. Transport, Services Core, and Authentication resolve transitively.
 
 | Package | Status |
 | --- | --- |
@@ -21,7 +21,9 @@ Checked `Packages/manifest.json` and `Packages/packages-lock.json` on November 9
 | Unity Pipeline (`com.unity.pipeline`) | Installed `0.10.0-exp.1` |
 | Netcode for GameObjects (`com.unity.netcode.gameobjects`) | Installed `2.13.3` |
 | Unity Transport (`com.unity.transport`) | Resolved `6.6.0` |
-| Multiplayer Services (`com.unity.services.multiplayer`) | Missing from both files |
+| Multiplayer Services (`com.unity.services.multiplayer`) | Installed `2.4.1` |
+| Services Core (`com.unity.services.core`) | Resolved `1.18.0` |
+| Authentication (`com.unity.services.authentication`) | Resolved `3.8.0` |
 | Multiplayer Play Mode (`com.unity.multiplayer.playmode`) | Installed `3.0.0` |
 
 ## Completed work and evidence
@@ -49,12 +51,19 @@ Checked `Packages/manifest.json` and `Packages/packages-lock.json` on November 9
 - **Verified.** Editor Host and independent headless Windows Development Players passed three connection, disconnect, and rejoin cycles. Both owners' movement and visible facing replicated. Late-join position, color, independent camera state, capacity rejection, wrong-port recovery, and local greybox regression passed.
 - **Historical evidence scope.** The recorded T03 automation used headless Windows Development Players. It did not independently test physical-device touch.
 
-**T04 — Network puzzles.** Implemented. [T04 network puzzles](T04_Network_Puzzles.md) records the authority, scene setup, and acceptance tests. The independent Lever and two-plate doors use server-write state. A server-only trigger proxy lets the Host detect the remote player's plate and passage occupancy.
+**T04 — Network puzzles.** Reported complete by the user. [T04 network puzzles](T04_Network_Puzzles.md) records the implementation and acceptance tests. The independent Lever and two-plate doors use server-write state. A server-only trigger proxy lets the Host detect the remote player's plate and passage occupancy.
 
 - **Verified.** Editor Host and independent headless Windows Development Client passed the Lever and two-plate tests, including rejection/cooldown, late join, disconnection cleanup, three rejoin rounds, and synchronized anti-crush pause/resume. Editor input and local Lever regressions passed.
 - **Awaiting interactive and physical-device testing.** Two visible windows, touch controls, and a join during an in-progress door transition remain manual checks.
 
+**T05 — Online Relay rooms.** Implemented in the network prototype. Online Relay creates private two-player Sessions and joins by Session code. It uses separate cached test identities, gates the gameplay UI on a connected local NGO player, and shares the existing player and puzzle authority. Direct Test remains available from the idle menu. See [T05 online rooms](T05_Online_Rooms.md).
+
+- **Verified in the live Editor.** The existing Two Tails cloud project initialized against `production`, signed in anonymously, created a room with a code and one NGO player using `RelayUnityTransport`, and returned to Ready after deleting the room.
+- **Verified with independent processes on one PC.** The Editor and a headless Windows Development Player completed three two-player Relay rounds with distinct identities. Copy, bad and deleted codes, capacity, rejoin, Host process loss, cancellation, and Direct after Relay passed. Scripted poses verified owner replication, both Lever owners, the two-plate gate, passage blocking, occupancy cleanup, and late-join door state.
+- **Verified delivery build.** `Builds/T05_Windows/TwoTailsOnline.exe` was built from Windows Network Prototype without the temporary probe, with zero errors and warnings. The online scene has zero Missing Scripts.
+- **Awaiting interactive and physical-device testing.** Repeat the input and camera checks in two visible windows. Test physical network interruption and two separate networks. iPhone deployment remains pending.
+
 ## Next steps and acceptance criteria
 
 1. Run remaining physical-device and interactive checks in [T04 network puzzles](T04_Network_Puzzles.md).
-2. T05 will add Relay and invite codes.
+2. Run the remaining T05 interactive and cross-network checks with the same Windows Development Build on both machines. iPhone installation and physical input validation remain separate.
