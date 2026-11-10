@@ -85,6 +85,13 @@ namespace TwoTails.Prototype
             desiredPitch = Mathf.Clamp(desiredPitch + vertical, minimumPitch, maximumPitch);
         }
 
+        public void AddOrbitDegrees(Vector2 delta)
+        {
+            desiredYaw = Mathf.Repeat(desiredYaw + delta.x, 360f);
+            desiredPitch = Mathf.Clamp(desiredPitch - delta.y, minimumPitch, maximumPitch);
+        }
+        public void AddZoomMetres(float delta) => ChangeZoom(delta);
+
         public void AddWheelZoom(float ticks) => ChangeZoom(ticks * wheelSensitivity);
 
         public void AddPinchZoom(float normalizedSpread) => ChangeZoom(normalizedSpread * pinchSensitivity);

@@ -37,7 +37,7 @@ Rechecked `Packages/manifest.json` and `Packages/packages-lock.json` on November
 
 ## Current task and outstanding work
 
-**Current: T06-A mobile readiness and iOS build preparation.** Engineering changes and Windows Xcode export are complete within the checks recorded below; native installation, physical input/network tests and mobile performance remain pending.
+**Current: T07-A developer split-screen and friends test package.** Engineering changes and Windows Xcode export are complete within the checks recorded below; native installation, physical input/network tests and mobile performance remain pending.
 
 **Resolved T04 localhost connection follow-up (November 9, 2026).** The Windows player log identified the T03 executable, and the Editor Host logged `NetworkConfig mismatch`. The old network scene disabled NGO scene management and the current T04 scene enables it. A matching independent T04 Windows QA client connected to the live Editor Host on `127.0.0.1:7777`; both processes reported two players. The current T04 Windows player was opened for manual use. See [T04 network puzzles](T04_Network_Puzzles.md) for the executable path and rebuild steps.
 
@@ -78,3 +78,15 @@ Rechecked `Packages/manifest.json` and `Packages/packages-lock.json` on November
 1. Follow [T06 mobile readiness](T06_Mobile_Readiness.md) for Mac/Xcode signing and iPhone checks.
 2. Run remaining physical-device and interactive checks in [T04 network puzzles](T04_Network_Puzzles.md).
 3. Run the remaining T05 interactive and cross-network checks with the same Windows Development Build on both machines. iPhone installation and physical input validation remain separate.
+
+## T07-A delivery (2026-11-10)
+
+Implemented separate MainMenu, SplitScreen and OnlineTest scenes, a Windows Friends Test profile, development-only offline entry, two independent cameras and per-viewport HUD, reserved Jump bindings, and cleanup back to menu. Baseline scenes, network ownership and puzzle validation code remain unchanged. See [friends test instructions](T07_Friends_Test.md).
+
+Verified: zero-error/warning compile, successful Windows x64 Development Build; initial headless executable startup log contained no exception; final build was regenerated after the camera adapter adjustment (not an interactive graphical test). Live Editor measured two actors, 50/50 camera rectangles, preserved 54-degree FOV, one AudioListener, no network manager in Local. W/arrow state injection isolated motors. Distinct actors on separate plates opened the door; P1 and P2 validated Lever interactions succeeded. P2 camera probe rotated only P2 after explicitly resuming the background-paused Editor. Local -> menu -> Relay Connected (one player) -> menu -> Local completed, then another local re-entry kept two actors/one listener/zero Missing Scripts. No UGS/Relay operation is called by Local, but no physical internet-disconnection test was performed.
+
+Distribution: `Builds/TwoTails_Friends_T07A_Windows.zip`, full runnable dependencies and README; private cache folders and Unity DontShip backup omitted. Not sent to anyone.
+
+Pending: interactive mouse/resize and keyboard rollover, physical P2 interaction-key input and full plate truth table regression, actual non-development executable entry denial, two-instance Relay join/rejoin/puzzle regression on this build, different-network friends acceptance, Android physical device tests. Historical T03-T05 results do not substitute for these checks. No jump/climb/night vision/new puzzles implemented. No commit/push.
+
+Follow-up verification (2026-11-10): final rebuilt Windows executable launched headless; startup log had no exception. Main Menu screenshot inspected in Editor: Local Play, Online Play, Quit and version label visible without overlap. This does not verify interactive executable input or two-instance networking. Test processes stopped; Editor left out of Play Mode.

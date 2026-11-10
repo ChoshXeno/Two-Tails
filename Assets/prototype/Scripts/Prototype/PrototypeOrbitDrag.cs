@@ -20,6 +20,8 @@ namespace TwoTails.Prototype
         private static bool EditingText => EventSystem.current?.currentSelectedGameObject?
             .GetComponent<UnityEngine.UI.InputField>()?.isFocused == true;
 
+        public void Configure(PrototypeFollowCamera camera) => orbit = camera;
+
         public void OnInitializePotentialDrag(PointerEventData data) => data.useDragThreshold = false;
 
         public void OnPointerDown(PointerEventData data)

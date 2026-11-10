@@ -10,6 +10,8 @@ namespace TwoTails.Prototype
         private UnityEngine.UI.Text label;
         private PrototypeInteractor.Feedback? previous;
 
+        public void Configure(PrototypeInteractor actor, bool second) { interactor=actor; debugPlayer=second; }
+
         private void Awake() => label = GetComponent<UnityEngine.UI.Text>();
 
         private void Update()
