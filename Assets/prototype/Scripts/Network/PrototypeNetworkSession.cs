@@ -120,6 +120,14 @@ namespace TwoTails.Prototype
             Changed?.Invoke();
         }
 
+        private void OnApplicationPause(bool paused)
+        {
+            // Desktop focus changes never disconnect. Resume only cleans up a confirmed
+            // broken Direct session; transport timeout continues to detect stale peers.
+            if (!paused && !onlineReserved && connected && !manager.IsConnectedClient && !stopping)
+                Stop("Disconnected: Connection lost while the app was in the background.");
+        }
+
         private void Update()
         {
             if (starting && Time.realtimeSinceStartup >= deadline)

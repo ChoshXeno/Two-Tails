@@ -47,6 +47,13 @@ namespace TwoTails.Prototype
 
         private void OnEnable() => network.OnlineConnectionLost += ConnectionLost;
 
+        private void OnApplicationPause(bool paused)
+        {
+            if (!paused && room != null && !busy &&
+                (room.State != SessionState.Connected || !network.LocalConnected))
+                ConnectionLost("Connection lost while the app was in the background");
+        }
+
         private void OnDisable()
         {
             network.OnlineConnectionLost -= ConnectionLost;

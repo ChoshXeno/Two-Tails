@@ -1,10 +1,14 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.OnScreen;
 
 namespace TwoTails.Prototype
 {
     [RequireComponent(typeof(RectTransform))]
     public sealed class PrototypeSafeArea : MonoBehaviour
     {
+        [SerializeField, Min(15), Tooltip("Frame rate target on mobile devices only.")]
+        private int mobileFrameRate = 30;
         private RectTransform container;
         private Rect lastArea;
         private Vector2Int lastSize;
@@ -12,7 +16,25 @@ namespace TwoTails.Prototype
         private void Awake()
         {
             container = GetComponent<RectTransform>();
+            if (Application.isMobilePlatform)
+                Application.targetFrameRate = mobileFrameRate;
         }
+
+        private void ClearTouchControls()
+        {
+            // Reset physical touches first so isolated OnScreenStick receives cancellation.
+            if (Touchscreen.current != null)
+                InputSystem.ResetDevice(Touchscreen.current);
+            foreach (var stick in GetComponentsInChildren<OnScreenStick>(true))
+                if (stick.isActiveAndEnabled && !stick.useIsolatedInputActions)
+                    stick.OnPointerUp(new UnityEngine.EventSystems.PointerEventData(UnityEngine.EventSystems.EventSystem.current));
+            foreach (var control in GetComponentsInChildren<OnScreenControl>(true))
+                if (control.control != null)
+                    InputSystem.ResetDevice(control.control.device);
+        }
+
+        private void OnApplicationPause(bool paused) { if (paused) ClearTouchControls(); }
+        private void OnApplicationFocus(bool focused) { if (!focused) ClearTouchControls(); }
 
         private void Update()
         {

@@ -19,6 +19,7 @@ namespace TwoTails.Prototype
         private InputAction interact;
         private PrototypeMotor motor;
         private bool hasFocus;
+        private bool paused;
         private bool waitForNeutral;
         private static bool EditingText => EventSystem.current?.currentSelectedGameObject?
             .GetComponent<InputField>()?.isFocused == true;
@@ -64,7 +65,7 @@ namespace TwoTails.Prototype
 
         private void Update()
         {
-            if (!hasFocus)
+            if (!hasFocus || paused)
                 return;
             if (EditingText)
             {
@@ -85,12 +86,19 @@ namespace TwoTails.Prototype
 
         private void OnInteract(InputAction.CallbackContext context)
         {
-            if (!hasFocus || EditingText)
+            if (!hasFocus || paused || EditingText)
                 return;
 
             if (interactor != null)
                 interactor.TryInteract();
             InteractionPressed?.Invoke();
+        }
+
+        private void OnApplicationPause(bool value)
+        {
+            paused = value;
+            waitForNeutral = true;
+            motor.SetMoveInput(Vector2.zero);
         }
     }
 }

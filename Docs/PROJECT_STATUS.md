@@ -1,6 +1,6 @@
 # Two Tails project status
 
-Last updated November 9, 2026 (Malaysia time).
+Last updated November 10, 2026 (Malaysia time).
 
 ## Goals and development environment
 
@@ -11,7 +11,7 @@ Two Tails is a mobile two-player cooperative animal puzzle game. Players combine
 
 ### Package inventory
 
-Checked `Packages/manifest.json` and `Packages/packages-lock.json` on November 9, 2026. Transport, Services Core, and Authentication resolve transitively.
+Rechecked `Packages/manifest.json` and `Packages/packages-lock.json` on November 10, 2026; no packages changed. Transport, Services Core, and Authentication resolve transitively.
 
 | Package | Status |
 | --- | --- |
@@ -37,7 +37,9 @@ Checked `Packages/manifest.json` and `Packages/packages-lock.json` on November 9
 
 ## Current task and outstanding work
 
-**T04 localhost connection follow-up (November 9, 2026).** The Windows player log identified the T03 executable, and the Editor Host logged `NetworkConfig mismatch`. The old network scene disabled NGO scene management and the current T04 scene enables it. A matching independent T04 Windows QA client connected to the live Editor Host on `127.0.0.1:7777`; both processes reported two players. The current T04 Windows player was opened for manual use. See [T04 network puzzles](T04_Network_Puzzles.md) for the executable path and rebuild steps.
+**Current: T06-A mobile readiness and iOS build preparation.** Engineering changes and Windows Xcode export are complete within the checks recorded below; native installation, physical input/network tests and mobile performance remain pending.
+
+**Resolved T04 localhost connection follow-up (November 9, 2026).** The Windows player log identified the T03 executable, and the Editor Host logged `NetworkConfig mismatch`. The old network scene disabled NGO scene management and the current T04 scene enables it. A matching independent T04 Windows QA client connected to the live Editor Host on `127.0.0.1:7777`; both processes reported two players. The current T04 Windows player was opened for manual use. See [T04 network puzzles](T04_Network_Puzzles.md) for the executable path and rebuild steps.
 
 **T02 — Local greybox.** Reported complete by the user. The scene has independent lever and two-plate doors, a P1 orbit and zoom camera, an English HUD, and an Editor/Development-only P2 test character. See [Prototype Greybox](Prototype_Greybox.md) for configuration, asset conventions, and acceptance checks.
 
@@ -63,7 +65,16 @@ Checked `Packages/manifest.json` and `Packages/packages-lock.json` on November 9
 - **Verified delivery build.** `Builds/T05_Windows/TwoTailsOnline.exe` was built from Windows Network Prototype without the temporary probe, with zero errors and warnings. The online scene has zero Missing Scripts.
 - **Awaiting interactive and physical-device testing.** Repeat the input and camera checks in two visible windows. Test physical network interruption and two separate networks. iPhone deployment remains pending.
 
+## T06-A — Mobile readiness
+
+**Implemented:** existing room UI enlarged for touch; input editing isolates movement/camera, pause clears local input and virtual controls, foreground checks reuse existing network cleanup. Landscape-only IL2CPP/ARM64 iOS Development profile and export menu added. Mobile FPS target is 30; desktop configuration retained. See [mobile readiness and Mac handoff](T06_Mobile_Readiness.md).
+
+**Verified:** pre-export C# compilation had zero errors/warnings; live scene had no Missing Scripts. Four aspect layouts, compact input layout, synthetic pause/pinch/reset probes, Direct Host and Relay create/leave/Direct smoke tests passed within the documented scope. Windows exported an Xcode project to ignored `Builds/iOS/Prototype`. Export is not native compilation or installation.
+
+**Reported by the user:** iPhone 15 Pro running iOS 26.5; no Mac. T03/T04 and T05 core/same-PC Relay have user acceptance. **Awaiting testing on a physical device:** iOS native build/install, multi-touch, keyboard, clipboard, background networking, cross-network and performance. Baseline commit `38f6ba4`; T06 changes are uncommitted.
+
 ## Next steps and acceptance criteria
 
-1. Run remaining physical-device and interactive checks in [T04 network puzzles](T04_Network_Puzzles.md).
-2. Run the remaining T05 interactive and cross-network checks with the same Windows Development Build on both machines. iPhone installation and physical input validation remain separate.
+1. Follow [T06 mobile readiness](T06_Mobile_Readiness.md) for Mac/Xcode signing and iPhone checks.
+2. Run remaining physical-device and interactive checks in [T04 network puzzles](T04_Network_Puzzles.md).
+3. Run the remaining T05 interactive and cross-network checks with the same Windows Development Build on both machines. iPhone installation and physical input validation remain separate.

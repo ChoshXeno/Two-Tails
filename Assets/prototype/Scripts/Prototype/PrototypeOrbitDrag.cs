@@ -17,11 +17,15 @@ namespace TwoTails.Prototype
         private int? previousSecond;
         private Vector2 previousPosition;
         private float previousSpread;
+        private static bool EditingText => EventSystem.current?.currentSelectedGameObject?
+            .GetComponent<UnityEngine.UI.InputField>()?.isFocused == true;
 
         public void OnInitializePotentialDrag(PointerEventData data) => data.useDragThreshold = false;
 
         public void OnPointerDown(PointerEventData data)
         {
+            if (EditingText)
+                return;
             if (data.button != PointerEventData.InputButton.Left)
                 return;
 
@@ -43,6 +47,11 @@ namespace TwoTails.Prototype
 
         public void OnDrag(PointerEventData data)
         {
+            if (EditingText)
+            {
+                ClearPointers();
+                return;
+            }
             int index = FindTouch(data.pointerId);
             if (index >= 0)
                 touches[index] = (data.pointerId, data.position);
@@ -61,12 +70,14 @@ namespace TwoTails.Prototype
 
         public void OnScroll(PointerEventData data)
         {
-            if (orbit != null && touches.Count == 0 && data.currentInputModule != null)
+            if (!EditingText && orbit != null && touches.Count == 0 && data.currentInputModule != null)
                 orbit.AddWheelZoom(data.currentInputModule.ConvertPointerEventScrollDeltaToTicks(data.scrollDelta).y);
         }
 
         private void Update()
         {
+            if (EditingText)
+                ClearPointers();
             if (touches.Count == 0 || orbit == null)
             {
                 previousFirst = previousSecond = null;
