@@ -26,6 +26,7 @@ namespace TwoTails.Prototype
         [SerializeField, Min(0f), Tooltip("Gap in metres to leave before a camera obstruction.")] private float obstructionPadding = 0.08f;
         [SerializeField, Min(0.01f), Tooltip("Smoothing time for returning to full distance after an obstruction.")] private float recoveryTime = 0.22f;
 
+        public Transform Target => target;
         private Vector3 pivot;
         private Vector3 pivotVelocity;
         private float desiredYaw;

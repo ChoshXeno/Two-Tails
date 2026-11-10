@@ -17,6 +17,7 @@ namespace TwoTails.Prototype
         private InputActionMap gameplay;
         private InputAction move;
         private InputAction interact;
+        private InputAction jump;
         private PrototypeMotor motor;
         private bool hasFocus;
         private bool paused;
@@ -32,20 +33,23 @@ namespace TwoTails.Prototype
             gameplay = instance.FindActionMap(actionMap, true);
             move = gameplay.FindAction("Move", true);
             interact = gameplay.FindAction("Interact", true);
+            jump=gameplay.FindAction("Jump");
         }
 
         private void OnEnable()
         {
             hasFocus = Application.isFocused;
             interact.performed += OnInteract;
+            if(jump!=null) jump.performed+=OnJump;
             gameplay.Enable();
         }
 
         private void OnDisable()
         {
             interact.performed -= OnInteract;
+            if(jump!=null) jump.performed-=OnJump;
             gameplay.Disable();
-            motor.SetMoveInput(Vector2.zero);
+            motor.ClearPendingInput();
         }
 
         private void OnDestroy()
@@ -60,7 +64,7 @@ namespace TwoTails.Prototype
                 return;
 
             waitForNeutral = true;
-            motor.SetMoveInput(Vector2.zero);
+            motor.ClearPendingInput();
         }
 
         private void Update()
@@ -70,7 +74,7 @@ namespace TwoTails.Prototype
             if (EditingText)
             {
                 waitForNeutral = true;
-                motor.SetMoveInput(Vector2.zero);
+                motor.ClearPendingInput();
                 return;
             }
 
@@ -83,6 +87,8 @@ namespace TwoTails.Prototype
 
             motor.SetMoveInput(input);
         }
+
+        private void OnJump(InputAction.CallbackContext context) { if(hasFocus && !paused && !EditingText) motor.RequestJump(); }
 
         private void OnInteract(InputAction.CallbackContext context)
         {
@@ -98,7 +104,7 @@ namespace TwoTails.Prototype
         {
             paused = value;
             waitForNeutral = true;
-            motor.SetMoveInput(Vector2.zero);
+            motor.ClearPendingInput();
         }
     }
 }

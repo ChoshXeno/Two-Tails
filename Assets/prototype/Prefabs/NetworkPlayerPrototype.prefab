@@ -16,6 +16,7 @@ GameObject:
   - component: {fileID: 8980305566776432743}
   - component: {fileID: 448037510740778892}
   - component: {fileID: 1064176699982632888}
+  - component: {fileID: 8388843293284150265}
   m_Layer: 2
   m_Name: NetworkPlayerPrototype
   m_TagString: Untagged
@@ -83,6 +84,10 @@ MonoBehaviour:
   turnSpeed: 720
   gravity: 24
   resetHeight: -5
+  jumpHeight: 1.2
+  climbDistance: 0.4
+  climbAngle: 45
+  climbSpeed: 2
 --- !u!114 &6930764271645751655
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -202,6 +207,19 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TwoTails.Prototype.PrototypeNetworkInteraction
   ShowTopMostFoldoutHeaderGroup: 1
   interactionOrigin: {fileID: 590788491424371970}
+--- !u!114 &8388843293284150265
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 216471887066900169}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f6afcd803672b524f9d0739ab778bbb5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TwoTails.Prototype.PrototypeAnimal
+  species: 0
 --- !u!1 &1948713233361753325
 GameObject:
   m_ObjectHideFlags: 0
