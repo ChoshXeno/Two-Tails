@@ -16,20 +16,53 @@ namespace TwoTails.Prototype
         [SerializeField, Min(0), Tooltip("Climb probe distance beyond controller front edge.")] private float climbDistance=0.4f;
         [SerializeField, Range(0,89), Tooltip("Maximum facing and input angle toward a vine front.")] private float climbAngle=45;
         [SerializeField, Min(0), Tooltip("Vertical climbing speed in metres per second.")] private float climbSpeed=2;
+        [SerializeField, Min(1f), Tooltip("Rabbit apex height relative to the ordinary jump.")]
+        private float rabbitJumpMultiplier = 2f;
+        [SerializeField, Tooltip("Scale the temporary capsule visual for Rabbit. Disable for a correctly sized model.")]
+        private bool scaleRabbitPlaceholder = true;
+        private int jumpsUsed;
+        private bool rabbit;
+        private float standingHeight, standingRadius, standingStep, standingSkin;
+        private Vector3 standingCenter, visualScale, visualPosition;
         private bool jumpPending;
+
+        public Vector3 PlaceholderScale => visualScale * (rabbit && scaleRabbitPlaceholder ? .5f : 1f);
+
+        public void ApplySpecies(PrototypeSpecies species)
+        {
+            bool next = species == PrototypeSpecies.Rabbit;
+            if (next == rabbit) return;
+            rabbit = next;
+            ClearPendingInput();
+            jumpsUsed = 0;
+            verticalSpeed = 0;
+            climbing = null;
+            controller.radius = standingRadius * (rabbit ? .5f : 1f);
+            controller.height = standingHeight * (rabbit ? .5f : 1f);
+            controller.skinWidth = standingSkin * (rabbit ? .5f : 1f);
+            controller.stepOffset = standingStep * (rabbit ? .5f : 1f);
+            controller.center = standingCenter - Vector3.up * ((standingHeight - controller.height) * .5f);
+            if (visual != null)
+            {
+                visual.localScale = PlaceholderScale;
+                visual.localPosition = visualPosition - Vector3.up *
+                    (rabbit && scaleRabbitPlaceholder ? standingHeight * .25f : 0f);
+            }
+            GetComponent<NetworkPlayerPrototype>()?.ResizeCollisionProxy(controller);
+        }
         private PrototypeClimbSurface climbing;
         public bool IsClimbing => climbing!=null;
         public PrototypeMotion Motion => IsClimbing ? PrototypeMotion.Climb : controller!=null && !controller.isGrounded ? (verticalSpeed>0 ? PrototypeMotion.Jump : PrototypeMotion.Fall) : moveInput.sqrMagnitude>0.01f ? PrototypeMotion.Run : PrototypeMotion.Idle;
         private void LateUpdate() { if(TryGetComponent<PrototypeAnimal>(out var animal)) animal.ApplyMotion(Motion); }
         public float VerticalSpeed => verticalSpeed;
-        public void RequestJump() { if(controller!=null && controller.isGrounded && !IsClimbing && GetComponent<PrototypeSwimmer>()?.IsSwimming!=true) jumpPending=true; }
+        public void RequestJump() { if(controller!=null && (rabbit ? jumpsUsed < 2 : controller.isGrounded) && !IsClimbing && GetComponent<PrototypeSwimmer>()?.IsSwimming!=true) jumpPending=true; }
         public void ClearPendingInput() { jumpPending=false; moveInput=Vector2.zero; GetComponent<PrototypeSwimmer>()?.ClearInput(); }
         private void OnControllerColliderHit(ControllerColliderHit hit){if(hit.collider.TryGetComponent<CooperativeWeightBox>(out var box))box.Push(this);}
-        public void Warp(Vector3 position){GetComponent<PrototypeSwimmer>()?.ResetState();ClearPendingInput();climbing=null;verticalSpeed=0;controller.enabled=false;transform.position=position;controller.enabled=true;}
+        public void Warp(Vector3 position){GetComponent<PrototypeSwimmer>()?.ResetState();ClearPendingInput();climbing=null;verticalSpeed=0;jumpsUsed=0;controller.enabled=false;transform.position=position;controller.enabled=true;}
         public void Ride(Vector3 delta){if(enabled&&controller.enabled&&!IsClimbing&&verticalSpeed<=0)controller.Move(delta);}
         public void ResetToSpawn()
         {
-            ClearPendingInput(); GetComponent<PrototypeSwimmer>()?.ResetState(); climbing=null; verticalSpeed=0;
+            ClearPendingInput(); GetComponent<PrototypeSwimmer>()?.ResetState(); climbing=null; verticalSpeed=0; jumpsUsed=0;
             controller.enabled=false; transform.position=spawnPosition; controller.enabled=true;
         }
         private bool ClearAt(Vector3 feet)
@@ -76,6 +109,13 @@ namespace TwoTails.Prototype
         private void Awake()
         {
             controller = GetComponent<CharacterController>();
+            standingHeight = controller.height;
+            standingRadius = controller.radius;
+            standingStep = controller.stepOffset;
+            standingSkin = controller.skinWidth;
+            standingCenter = controller.center;
+            visualScale = visual != null ? visual.localScale : Vector3.one;
+            visualPosition = visual != null ? visual.localPosition : Vector3.zero;
             spawnPosition = transform.position;
             if (movementCamera == null && Camera.main != null)
                 movementCamera = Camera.main.transform;
@@ -119,16 +159,24 @@ namespace TwoTails.Prototype
             float deltaTime = Time.deltaTime;
             if(GetComponent<PrototypeSwimmer>()?.Move(direction,deltaTime,controller)==true){jumpPending=false;climbing=null;verticalSpeed=0;if(visual!=null&&direction.sqrMagnitude>.0001f)visual.rotation=Quaternion.RotateTowards(visual.rotation,Quaternion.LookRotation(direction),turnSpeed*deltaTime);return;}
             if(Climb(direction,deltaTime))return;
-            bool jump=jumpPending && controller.isGrounded; jumpPending=false;
+            bool jump=jumpPending && (rabbit ? jumpsUsed < 2 : controller.isGrounded); jumpPending=false;
             verticalSpeed = controller.isGrounded && verticalSpeed <= 0f
                 ? -2f
                 : verticalSpeed - gravity * deltaTime;
-            if(jump) verticalSpeed=Mathf.Sqrt(2f*gravity*jumpHeight);
+            if (jump)
+            {
+                jumpsUsed++;
+                verticalSpeed = Mathf.Sqrt(2f * gravity * jumpHeight * (rabbit ? rabbitJumpMultiplier : 1f));
+            }
+            AnimalMechanicsWorld.Instance?.RequestHeavyPush(this, direction);
             CollisionFlags collisions = controller.Move(
                 (direction * speed + Vector3.up * verticalSpeed) * deltaTime);
             if ((collisions & CollisionFlags.Above)!=0 && verticalSpeed>0) verticalSpeed=0;
-            if ((collisions & CollisionFlags.Below) != 0)
+            if (!jump && verticalSpeed <= 0f && (collisions & CollisionFlags.Below) != 0)
+            {
                 verticalSpeed = -2f;
+                jumpsUsed = 0;
+            }
 
             if (visual != null && direction.sqrMagnitude > 0.0001f)
                 visual.rotation = Quaternion.RotateTowards(visual.rotation,

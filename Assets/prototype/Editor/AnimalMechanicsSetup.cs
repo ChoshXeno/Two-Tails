@@ -59,7 +59,13 @@ namespace TwoTails.Editor
     var scene=EditorSceneManager.OpenScene(path);foreach(var p in UnityEngine.Object.FindObjectsByType<PrototypeMotor>(FindObjectsInactive.Include))if(p.GetComponent<AnimalMechanicsActor>()==null)p.gameObject.AddComponent<AnimalMechanicsActor>();
     foreach(var p in UnityEngine.Object.FindObjectsByType<PrototypeMotor>(FindObjectsInactive.Include))if(p.GetComponent<PrototypeSwimmer>()==null)p.gameObject.AddComponent<PrototypeSwimmer>();
     ConfigureHud();
-    if(GameObject.Find("Animal Mechanisms")!=null){EditorSceneManager.SaveScene(scene);continue;}
+    if(GameObject.Find("Animal Mechanisms")!=null)
+    {
+     var existing=GameObject.Find("Animal Mechanisms").GetComponent<AnimalMechanicsWorld>();
+     if(existing!=null)existing.ConfigureExtendedCourseInEditor();
+     EditorSceneManager.SaveScene(scene);
+     continue;
+    }
     var root=new GameObject("Animal Mechanisms").transform;var world=root.gameObject.AddComponent<AnimalMechanicsWorld>();bool online=path.Contains("Online");var ws=new SerializedObject(world);ws.FindProperty("networked").boolValue=online;ws.ApplyModifiedPropertiesWithoutUndo();if(online){root.gameObject.AddComponent<NetworkObject>();root.gameObject.AddComponent<AnimalMechanicsNetwork>();}
     var zone=Point(root,"Safe Swap Lobby",new Vector3(0,1.5f,-4.5f)).gameObject.AddComponent<BoxCollider>();zone.isTrigger=true;zone.size=new Vector3(16,3,5);Ref(world,"lobby",zone);
     var displays=new Transform[2];var visuals=new Renderer[2];

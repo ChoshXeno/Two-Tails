@@ -66,6 +66,19 @@ namespace TwoTails.Prototype
                 UseLeverRpc(target.NetworkObject);
         }
 
+        public void RequestHeavyPush()
+        {
+            if (IsSpawned && IsOwner) PushHeavyRpc();
+        }
+
+        [Rpc(SendTo.Server, Delivery = RpcDelivery.Unreliable, InvokePermission = RpcInvokePermission.Owner)]
+        private void PushHeavyRpc(RpcParams rpc = default)
+        {
+            if (IsServer && rpc.Receive.SenderClientId == OwnerClientId &&
+                NetworkPuzzleOccupancy.IsCurrentPlayer(NetworkManager, player))
+                AnimalMechanicsWorld.Instance?.AcceptHeavyPush(GetComponent<AnimalMechanicsActor>());
+        }
+
         public void RequestMechanic(int target){if(IsOwner&&IsSpawned&&AnimalMechanicsWorld.Instance!=null)UseMechanicRpc(target,AnimalMechanicsWorld.Instance.State.Revision);}
         [Rpc(SendTo.Server,InvokePermission=RpcInvokePermission.Owner)]
         private void UseMechanicRpc(int target,int revision,RpcParams rpc=default)

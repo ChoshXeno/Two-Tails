@@ -26,6 +26,14 @@ namespace TwoTails.Prototype
         private PrototypeLocalInput input;
         private CharacterController controller;
 
+        internal void ResizeCollisionProxy(CharacterController controller)
+        {
+            if (serverProxy == null) return;
+            serverProxy.height = controller.height;
+            serverProxy.radius = controller.radius;
+            serverProxy.center = serverProxy.transform.InverseTransformPoint(transform.TransformPoint(controller.center));
+        }
+
         private void Awake()
         {
             Motor = GetComponent<PrototypeMotor>();

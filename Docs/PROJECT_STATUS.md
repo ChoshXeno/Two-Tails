@@ -1,6 +1,6 @@
 # Two Tails project status
 
-Last updated November 18, 2026 (Malaysia time).
+Last updated November 19, 2026 (Malaysia time).
 
 ## Goals and development environment
 
@@ -151,3 +151,17 @@ Verified: source inspection and git diff whitespace check. Unity CLI reported th
 **Verified in the live Editor:** successful Unity script compile with 0 errors and two pre-existing `UAC0009` probe-script warnings; fresh Console after tests had 0 errors/0 warnings. Runtime reflection confirmed all eight night shadow modes `None`, PC SSAO inactive, Developer Lights restoration to `Soft`/active, and reapplication on return to night. Captured Game View with the LeverDoor open and closed; the moving panel collider stayed enabled. Existing Beaver flow was exercised through its handler: collected 3 logs, built all 3 slots, reclaimed the middle slot and restored its outline, observed water target reverse from 0 to -4, then rebuilt and restored target 0. Play Mode state was discarded; Editor returned to `Prototype_MainMenu`. See [night lighting evidence and settings](Animal_Mechanics.md#november-18--night-shadow-and-light-edge-follow-up).
 
 **Awaiting user validation:** walking around a fixed object while observing both live split views, multiple local-light edge positions, rendered Online/Relay view isolation, a Windows Development player, and mobile URP parity. No physical-device, Relay or player-build visual test ran in this task. No commit/push.
+
+## Rabbit and Elephant — 2026-11-19
+
+**Implemented:** Rabbit collider and two-jump movement, Elephant weight, guided push and Strike, four lobby displays, replicated and resettable course state, and shared graybox geometry in SplitScreen and OnlineTest. See Animal_Mechanics.md for dimensions, controls and entrance.
+
+**Verified:** cached Roslyn source compilation and analytical jump/geometry checks. **Pending:** full Unity import and NGO postprocessing, Play Mode measurement and gameplay regression, and Host/Client validation. Pipeline could not reach the Editor and batch mode stopped before import (Logs/RabbitElephantCompile.log). T07-D and T08 remain paused.
+
+### Saved course and HUD lifecycle
+
+Both prototype scenes now contain the two display objects and the course in Edit Mode. Animal Mechanisms binds serialized scene references, uses the Heavy Gap Block's saved position as the reset origin and keeps its existing network snapshot for offset and board state. The historical runtime builder remains available as fallback.
+
+The local historical Editor log records PrototypeNetworkPuzzleHud.Update (old line 32), AnimalMechanicsActor.HasStrikeTarget (21), AnimalMechanicsWorld.FindTarget (121), then Component.transform on a destroyed actor. The HUD now clears its player bindings when there is no spawned local player and when disabled, and respects Unity destroyed-object checks. The exact historical trigger sequence was not reproduced.
+
+Verified through the live Editor: saved and reopened both scenes and found all three children. In SplitScreen Play Mode there was exactly one of each; invoked Reset and requested exit. The Pipeline connection dropped during the subsequent online verification attempt. Online Host/Client, full animal gameplay checks and repeated exception regression remain pending.

@@ -8,7 +8,11 @@ namespace TwoTails.Prototype
     {
         public const int SlotLimit = 16;
         public const int LogLimit = 15;
-        public byte SpeciesA, SpeciesB;
+        public byte SpeciesA, SpeciesB, SpeciesC, SpeciesD;
+        public Vector3 PositionC, PositionD;
+        public double BusyC, BusyD;
+        public float HeavyOffset;
+        public bool BoardBroken;
         public Vector3 PositionA, PositionB;
         public int Picked, Revision;
         // Each nibble stores zero for empty, or the original log index plus one.
@@ -61,6 +65,14 @@ namespace TwoTails.Prototype
 
         public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
         {
+            serializer.SerializeValue(ref SpeciesC);
+            serializer.SerializeValue(ref SpeciesD);
+            serializer.SerializeValue(ref PositionC);
+            serializer.SerializeValue(ref PositionD);
+            serializer.SerializeValue(ref BusyC);
+            serializer.SerializeValue(ref BusyD);
+            serializer.SerializeValue(ref HeavyOffset);
+            serializer.SerializeValue(ref BoardBroken);
             serializer.SerializeValue(ref SpeciesA);
             serializer.SerializeValue(ref SpeciesB);
             serializer.SerializeValue(ref PositionA);
@@ -74,7 +86,9 @@ namespace TwoTails.Prototype
         }
 
         public bool Equals(AnimalMechanicsState other) =>
-            SpeciesA == other.SpeciesA && SpeciesB == other.SpeciesB &&
+            SpeciesC == other.SpeciesC && SpeciesD == other.SpeciesD &&
+            PositionC == other.PositionC && PositionD == other.PositionD && BusyC == other.BusyC && BusyD == other.BusyD &&
+            HeavyOffset == other.HeavyOffset && BoardBroken == other.BoardBroken && SpeciesA == other.SpeciesA && SpeciesB == other.SpeciesB &&
             PositionA == other.PositionA && PositionB == other.PositionB &&
             Picked == other.Picked && Slots == other.Slots && Revision == other.Revision &&
             WaterLevel == other.WaterLevel && BusyA == other.BusyA && BusyB == other.BusyB;

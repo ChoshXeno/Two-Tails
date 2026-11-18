@@ -3,7 +3,7 @@ using Unity.Netcode;
 using UnityEngine;
 namespace TwoTails.Prototype
 {
- public sealed class AnimalMechanicsWorld:MonoBehaviour
+ public sealed partial class AnimalMechanicsWorld:MonoBehaviour
  {
   public static AnimalMechanicsWorld Instance {get;private set;}
   [SerializeField] private bool networked;
@@ -43,10 +43,11 @@ namespace TwoTails.Prototype
   public double Now=>networked&&net!=null&&net.IsSpawned?net.NetworkManager.ServerTime.Time:Time.timeAsDouble;
   public int Progress => State.Progress;
   public static int Count(int mask){int n=0;for(;mask!=0;mask&=mask-1)n++;return n;}
-  private void Awake(){colors=new MaterialPropertyBlock();if(!(Application.isEditor||Debug.isDebugBuild)&&resetPoint!=null)resetPoint.gameObject.SetActive(false);Instance=this;net=GetComponent<AnimalMechanicsNetwork>();startA=displays[0].position;startB=displays[1].position;ConfigureSlots();if(!networked)Initialize();}
+  private void Awake(){colors=new MaterialPropertyBlock();if(!(Application.isEditor||Debug.isDebugBuild)&&resetPoint!=null)resetPoint.gameObject.SetActive(false);Instance=this;net=GetComponent<AnimalMechanicsNetwork>();startA=displays[0].position;startB=displays[1].position;ConfigureExtendedCourse();ConfigureSlots();if(!networked)Initialize();}
   private void OnDestroy()
   {
    if (Instance == this) Instance = null;
+   if (courseBlue != null) Destroy(courseBlue);
    if (outlineMesh != null) Destroy(outlineMesh);
    if (outlineMaterial != null) Destroy(outlineMaterial);
   }
@@ -85,7 +86,7 @@ namespace TwoTails.Prototype
    }
    damLabel.text = Progress == RequiredLogs ? "Dam complete" : $"Dam ({Progress}/{RequiredLogs})";
   }
-  public void Initialize(){if(!Authority)return;Apply(new AnimalMechanicsState{SpeciesA=(byte)PrototypeSpecies.Otter,SpeciesB=(byte)PrototypeSpecies.Beaver,PositionA=startA,PositionB=startB,WaterLevel=reservoir.InitialLevel});Publish();}
+  public void Initialize(){if(!Authority)return;Apply(new AnimalMechanicsState{SpeciesA=(byte)PrototypeSpecies.Otter,SpeciesB=(byte)PrototypeSpecies.Beaver,PositionA=startA,PositionB=startB,SpeciesC=(byte)PrototypeSpecies.Rabbit,SpeciesD=(byte)PrototypeSpecies.Elephant,PositionC=startC,PositionD=startD,WaterLevel=reservoir.InitialLevel});Publish();}
   private bool Valid(AnimalMechanicsActor a)=>a!=null&&a.isActiveAndEnabled&&(networked?(NetworkManager.Singleton!=null&&(NetworkManager.Singleton.IsServer?NetworkPuzzleOccupancy.IsCurrentPlayer(NetworkManager.Singleton,a.GetComponent<NetworkPlayerPrototype>()):a.GetComponent<NetworkPlayerPrototype>().IsSpawned&&a.GetComponent<NetworkPlayerPrototype>().IsOwner)):a.GetComponent<PrototypeMotor>().isActiveAndEnabled);
   private const int ExtraLogStart = 60;
   private int LogIndex(int id) => id >= ExtraLogStart ? id - ExtraLogStart + 10 : id >= 10 && id < 20 ? id - 10 : -1;
@@ -97,7 +98,8 @@ namespace TwoTails.Prototype
 
   private Transform Target(int id)
   {
-   if (id >= 0 && id < 2) return displays[id];
+   if (id >= 0 && id < displays.Length) return displays[id];
+   if (id == StrikeTarget) return strikeBoard;
    if (id == BuildTarget) return dam;
    if (id == 30) return Application.isEditor || Debug.isDebugBuild ? resetPoint : null;
    if (IsReclaim(id)) return slots[id - ReclaimStart].Piece;
@@ -107,12 +109,14 @@ namespace TwoTails.Prototype
 
   private Vector3 Point(int id)
   {
+   if (id == StrikeTarget) return strikeBoard.position;
    if (IsReclaim(id)) return slots[id - ReclaimStart].Anchor.position;
    return Target(id).position + Vector3.up * (IsLog(id) ? .5f : 1f);
   }
 
   public int FindTarget(AnimalMechanicsActor actor)
   {
+   if (!Valid(actor)) return -1;
    int best = -1;
    float nearest = float.PositiveInfinity;
    Vector3 origin = actor.transform.position + Vector3.up;
@@ -135,6 +139,7 @@ namespace TwoTails.Prototype
    var target = Target(id);
    if (!Valid(actor) || target == null || !target.gameObject.activeInHierarchy) return "Interaction unavailable";
    if (actor.Locked) return "Please wait";
+   if (id == StrikeTarget && actor.GetComponent<PrototypeAnimal>().Species != PrototypeSpecies.Elephant) return "Only Elephant can strike";
    Vector3 origin = actor.transform.position + Vector3.up;
    Vector3 offset = Point(id) - origin;
    if (offset.magnitude > interactionDistance) return "Move closer";
@@ -165,7 +170,8 @@ namespace TwoTails.Prototype
 
   public string Prompt(AnimalMechanicsActor actor, int id)
   {
-   if (id < 2) return "Swap to " + (PrototypeSpecies)(id == 0 ? State.SpeciesA : State.SpeciesB);
+   if (id >= 0 && id < displays.Length) return "Swap to " + DisplaySpecies(State,id);
+   if (id == StrikeTarget) return "Strike";
    if (IsLog(id)) return "Pick up wood";
    if (IsReclaim(id)) return "Reclaim dam wood";
    return "Reset animal test";
@@ -175,17 +181,22 @@ namespace TwoTails.Prototype
    if(!Authority){message="Waiting for host";return false;} Physics.SyncTransforms(); message=Check(actor,id);if(message!=null)return false;
    if(cooldowns.TryGetValue(actor,out double until)&&Now<until){message="Please wait";return false;}cooldowns[actor]=Now+.15;
    var species=actor.GetComponent<PrototypeAnimal>().Species;var next=State;
-   if(id<2)
+   if(id<displays.Length)
    {
-    if(Now<(id==0?next.BusyA:next.BusyB)){message="Display is busy";return false;}
+    if(Now<DisplayBusy(next,id)){message="Display is busy";return false;}
     if(actor.Inventory>0){message="Use your logs before swapping";return false;}
     Vector3 from=actor.transform.position,to=displays[id].position;
     if(!lobby.bounds.Contains(from+Vector3.up)||!lobby.bounds.Contains(to+Vector3.up)){message="Swap only in the lobby";return false;}
     if(!Safe(to,actor.transform,displays[id])||!Safe(from,actor.transform,displays[id])){message="Swap position is blocked";return false;}
-    var replacement=(PrototypeSpecies)(id==0?next.SpeciesA:next.SpeciesB);
-    if(id==0){next.SpeciesA=(byte)species;next.PositionA=from;next.BusyA=Now+swapDuration;}else{next.SpeciesB=(byte)species;next.PositionB=from;next.BusyB=Now+swapDuration;}
+    var replacement=DisplaySpecies(next,id);
+    SetDisplay(ref next,id,species,from,Now+swapDuration);
     if(networked)actor.GetComponent<NetworkPlayerPrototype>().Exchange(replacement,to);else{actor.GetComponent<PrototypeAnimal>().Apply(replacement);actor.Transition(to);}
     message="Now playing "+replacement;
+   }
+   else if (id == StrikeTarget)
+   {
+    next.BoardBroken = true;
+    message = "Board broken";
    }
    else if (IsLog(id))
    {
@@ -226,22 +237,25 @@ namespace TwoTails.Prototype
   {
    // A returning connection must not duplicate an animal currently held by a display or another player.
    int used=net!=null&&!net.IsSpawned?(1<<(int)PrototypeSpecies.Otter)|(1<<(int)PrototypeSpecies.Beaver):(1<<State.SpeciesA)|(1<<State.SpeciesB);
+   used |= net != null && !net.IsSpawned ? (1 << (int)PrototypeSpecies.Rabbit) | (1 << (int)PrototypeSpecies.Elephant) : (1 << State.SpeciesC) | (1 << State.SpeciesD);
    foreach(var player in FindObjectsByType<NetworkPlayerPrototype>())if(player!=joining&&player.IsSpawned)used|=1<<(int)player.GetComponent<PrototypeAnimal>().Species;
    if((used&(1<<(int)preferred))==0)return preferred;
-   for(int i=0;i<4;i++)if((used&(1<<i))==0)return (PrototypeSpecies)i;
+   for(int i=0;i<6;i++)if((used&(1<<i))==0)return (PrototypeSpecies)i;
    return preferred;
   }
   public void ReturnLogs(int bits){if(!Authority)return;var s=State;if(bits==0)return;s.Picked&=~bits;s.Revision++;Apply(s);Publish();}
   public void ResetTest()
   {
-   if(!Authority)return;var next=State;next.Picked=0;next.Slots=0;next.WaterLevel=reservoir.InitialLevel;next.Revision++;cooldowns.Clear();
+   if(!Authority)return;var next=State;next.Picked=0;next.Slots=0;next.HeavyOffset=0;next.BoardBroken=false;pushActor=null;next.WaterLevel=reservoir.InitialLevel;next.Revision++;cooldowns.Clear();
    int index=0;foreach(var actor in FindObjectsByType<AnimalMechanicsActor>())if(Valid(actor))
    {actor.SetHeldLogs(0);Vector3 safe=new Vector3(-1.5f+3*index++,.1f,-4);if(networked)actor.GetComponent<NetworkPlayerPrototype>().Exchange(actor.GetComponent<PrototypeAnimal>().Species,safe);else actor.Transition(safe);}
    Apply(next);Publish();
   }
   private void FixedUpdate()
   {
-   if (!Authority || State.WaterLevel == WaterTarget) return;
+   if (!Authority) return;
+   StepHeavyPush();
+   if (State.WaterLevel == WaterTarget) return;
    var next = State;
    next.WaterLevel = Mathf.MoveTowards(next.WaterLevel, WaterTarget, riseSpeed * Time.fixedDeltaTime);
    Apply(next);
@@ -252,15 +266,18 @@ namespace TwoTails.Prototype
   {
    var previous = State;
    State = state;
+   ApplyCourseState();
    reservoir.SetLevel(state.WaterLevel);
    if (previous.Revision == state.Revision && previous.WaterLevel != state.WaterLevel &&
        previous.PositionA == state.PositionA && previous.PositionB == state.PositionB &&
        previous.SpeciesA == state.SpeciesA && previous.SpeciesB == state.SpeciesB &&
-       previous.Picked == state.Picked && previous.Slots == state.Slots) return;
-   displays[0].position=state.PositionA;displays[1].position=state.PositionB;
-   for(int i=0;i<2;i++){displayVisuals[i].GetPropertyBlock(colors);colors.SetColor("_BaseColor",PrototypeAnimal.ColorFor((PrototypeSpecies)(i==0?state.SpeciesA:state.SpeciesB)));displayVisuals[i].SetPropertyBlock(colors);var text=displays[i].GetComponentInChildren<TextMesh>();text.text=((PrototypeSpecies)(i==0?state.SpeciesA:state.SpeciesB)).ToString();}
+       previous.Picked == state.Picked && previous.Slots == state.Slots &&
+       previous.PositionC == state.PositionC && previous.PositionD == state.PositionD &&
+       previous.SpeciesC == state.SpeciesC && previous.SpeciesD == state.SpeciesD) return;
+   displays[0].position=state.PositionA;displays[1].position=state.PositionB;displays[2].position=state.PositionC;displays[3].position=state.PositionD;
+   for(int i=0;i<displays.Length;i++){displayVisuals[i].GetPropertyBlock(colors);colors.SetColor("_BaseColor",PrototypeAnimal.ColorFor(DisplaySpecies(state,i)));displayVisuals[i].SetPropertyBlock(colors);var text=displays[i].GetComponentInChildren<TextMesh>();text.text=(DisplaySpecies(state,i)).ToString();}
    for(int i=0;i<Mathf.Min(logs.Length, AnimalMechanicsState.LogLimit);i++)if(logs[i]!=null)logs[i].gameObject.SetActive((state.Picked&(1<<i))==0);
    ApplySlots();
-  }  private void Update(){for(int i=0;i<2;i++){double remaining=(i==0?State.BusyA:State.BusyB)-Now;displayVisuals[i].transform.localScale=Vector3.one*Mathf.Lerp(1,.25f,Mathf.Clamp01((float)(remaining/swapDuration)));}}
+  }  private void Update(){for(int i=0;i<displays.Length;i++){double remaining=DisplayBusy(State,i)-Now;displayVisuals[i].transform.localScale=Vector3.one*Mathf.Lerp(1,.25f,Mathf.Clamp01((float)(remaining/swapDuration)));}}
  }
 }

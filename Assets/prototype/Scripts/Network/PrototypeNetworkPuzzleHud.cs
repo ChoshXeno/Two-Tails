@@ -17,19 +17,33 @@ namespace TwoTails.Prototype
         private void Awake() => interactLabel = interact.GetComponentInChildren<UnityEngine.UI.Text>(true);
 
         private void OnEnable() => interact.onClick.AddListener(Press);
-        private void OnDisable() => interact.onClick.RemoveListener(Press);
+        private void OnDisable()
+        {
+            interact.onClick.RemoveListener(Press);
+            ClearPlayer();
+        }
+
+        private void ClearPlayer()
+        {
+            current = null;
+            interaction = null;
+            actor = null;
+        }
 
         private void Update()
         {
-            if (current != session.LocalPlayer)
+            var local = session.LocalPlayer;
+            if (local == null || !local.IsSpawned)
+                ClearPlayer();
+            else if (current != local)
             {
-                current = session.LocalPlayer;
+                current = local;
                 interaction = current != null ? current.GetComponent<PrototypeNetworkInteraction>() : null;
                 actor = current != null ? current.GetComponent<AnimalMechanicsActor>() : null;
             }
 
             interact.gameObject.SetActive(interaction != null);
-            if (interactLabel != null) interactLabel.text = actor?.HasPickupTarget == true ? "Pickup" : "Interact";
+            if (interactLabel != null) interactLabel.text = actor != null && actor.HasStrikeTarget ? "Strike" : actor != null && actor.HasPickupTarget ? "Pickup" : "Interact";
             if(jump!=null)jump.SetActive(interaction!=null);
             prompt.text = interaction != null ? interaction.GetPrompt() : "";
             if (plateStatus != null)

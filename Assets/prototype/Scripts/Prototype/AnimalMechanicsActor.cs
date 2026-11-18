@@ -18,6 +18,7 @@ namespace TwoTails.Prototype
    get{if(Time.unscaledTime<feedbackUntil)return feedback;var world=AnimalMechanicsWorld.Instance;if(world==null)return "";int id=world.FindTarget(this);return id<0?"":world.Prompt(this,id);}
   }
   public bool IsBeaver => GetComponent<PrototypeAnimal>().Species == PrototypeSpecies.Beaver;
+  public bool HasStrikeTarget => AnimalMechanicsWorld.Instance?.FindTarget(this) == AnimalMechanicsWorld.StrikeTarget;
   public bool HasPickupTarget
   {
    get
@@ -65,10 +66,10 @@ namespace TwoTails.Prototype
   }
   private IEnumerator Animate()
   {
-   var visual=GetComponent<PrototypeMotor>().Facing;Vector3 normal=Vector3.one;float start=Time.unscaledTime;
+   var visual=GetComponent<PrototypeMotor>().Facing;Vector3 normal=GetComponent<PrototypeMotor>().PlaceholderScale;float start=Time.unscaledTime;
    while(Time.unscaledTime-start<.6f){float t=(Time.unscaledTime-start)/.6f;visual.localScale=normal*Mathf.Lerp(.2f,1,Mathf.SmoothStep(0,1,t));yield return null;}
    visual.localScale=normal;
   }
-  private void OnDisable(){lockedUntil=0;feedbackUntil=0;StopAllCoroutines();var m=GetComponent<PrototypeMotor>();if(m!=null)m.Facing.localScale=Vector3.one;}
+  private void OnDisable(){lockedUntil=0;feedbackUntil=0;StopAllCoroutines();var m=GetComponent<PrototypeMotor>();if(m!=null)m.Facing.localScale=m.PlaceholderScale;}
  }
 }
