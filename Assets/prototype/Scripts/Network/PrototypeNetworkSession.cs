@@ -167,6 +167,8 @@ namespace TwoTails.Prototype
             response.Rotation = spawnPoints[slot].rotation;
         }
 
+        [SerializeField, Tooltip("Development test: swap Fox and Monkey assignment before starting a session. Spawn slots remain unchanged.")] private bool swapAnimals;
+        public byte AnimalSlotFor(ulong id)=>(byte)(SlotFor(id)^((Application.isEditor||Debug.isDebugBuild)&&swapAnimals?1:0));
         public byte SlotFor(ulong clientId) => (byte)Array.IndexOf(slots, (ulong?)clientId);
 
         private void Connected(ulong id)
@@ -246,3 +248,4 @@ namespace TwoTails.Prototype
         }
     }
 }
+

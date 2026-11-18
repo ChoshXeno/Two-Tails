@@ -20,18 +20,15 @@ Shader "Two Tails/Prototype Animal Vision"
    CBUFFER_START(UnityPerMaterial)
    half4 _BaseColor;
    CBUFFER_END
-   float4 _AnimalVision;
-   float3 _AnimalPosition;
-   float _AnimalVisionEnabled;
-   half4 _AnimalNightTint;
+   #include "PrototypeVisibility.hlsl"
    struct Attributes { float4 positionOS:POSITION; float3 normalOS:NORMAL; };
    struct Varyings { float4 positionCS:SV_POSITION; float3 positionWS:TEXCOORD0; half3 normalWS:TEXCOORD1; };
    Varyings Vert(Attributes a){ Varyings o;o.positionWS=TransformObjectToWorld(a.positionOS.xyz);o.positionCS=TransformWorldToHClip(o.positionWS);o.normalWS=TransformObjectToWorldNormal(a.normalOS);return o; }
    half4 Frag(Varyings i):SV_Target
    {
     half3 normal=normalize(i.normalWS);
-    float visibility=1-smoothstep(_AnimalVision.x,_AnimalVision.x+max(_AnimalVision.y,0.01),distance(i.positionWS,_AnimalPosition));
-    visibility=max(visibility,_AnimalVision.w);
+    float visibility=AnimalVisibility(i.positionWS+normal*.025);
+
     InputData data=(InputData)0;
     data.positionWS=i.positionWS;data.normalWS=normal;
     data.viewDirectionWS=GetWorldSpaceNormalizeViewDir(i.positionWS);
@@ -44,11 +41,12 @@ Shader "Two Tails/Prototype Animal Vision"
     SurfaceData surface=(SurfaceData)0;
     surface.albedo=_BaseColor.rgb;surface.alpha=1;surface.occlusion=1;
     surface.smoothness=0.18;surface.normalTS=half3(0,0,1);
-    return UniversalFragmentPBR(data,surface);   }
+    half4 lit=UniversalFragmentPBR(data,surface);lit.rgb=AnimalFinish(lit.rgb,visibility,AnimalLocalLight(i.positionWS,i.positionCS));return lit;   }
    ENDHLSL
   }
   UsePass "Universal Render Pipeline/Lit/ShadowCaster"
   UsePass "Universal Render Pipeline/Lit/DepthOnly"
  }
 }
+
 

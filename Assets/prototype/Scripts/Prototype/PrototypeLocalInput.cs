@@ -17,7 +17,7 @@ namespace TwoTails.Prototype
         private InputActionMap gameplay;
         private InputAction move;
         private InputAction interact;
-        private InputAction jump;
+        private InputAction jump; private InputAction surface;
         private PrototypeMotor motor;
         private bool hasFocus;
         private bool paused;
@@ -33,7 +33,7 @@ namespace TwoTails.Prototype
             gameplay = instance.FindActionMap(actionMap, true);
             move = gameplay.FindAction("Move", true);
             interact = gameplay.FindAction("Interact", true);
-            jump=gameplay.FindAction("Jump");
+            jump=gameplay.FindAction("Jump"); surface=gameplay.FindAction("Surface");
         }
 
         private void OnEnable()
@@ -81,11 +81,11 @@ namespace TwoTails.Prototype
             Vector2 input = move.ReadValue<Vector2>();
             if (waitForNeutral)
             {
-                waitForNeutral = input.sqrMagnitude > 0.0001f;
+                waitForNeutral = input.sqrMagnitude > 0.0001f || jump?.IsPressed()==true || surface?.IsPressed()==true;
                 return;
             }
 
-            motor.SetMoveInput(input);
+            motor.SetMoveInput(input); GetComponent<PrototypeSwimmer>()?.SetInput(jump?.IsPressed()==true,surface?.IsPressed()==true);
         }
 
         private void OnJump(InputAction.CallbackContext context) { if(hasFocus && !paused && !EditingText) motor.RequestJump(); }
@@ -95,6 +95,7 @@ namespace TwoTails.Prototype
             if (!hasFocus || paused || EditingText)
                 return;
 
+            if(GetComponent<AnimalMechanicsActor>()?.TryRequest()==true)return;
             if (interactor != null)
                 interactor.TryInteract();
             InteractionPressed?.Invoke();
@@ -108,3 +109,5 @@ namespace TwoTails.Prototype
         }
     }
 }
+
+

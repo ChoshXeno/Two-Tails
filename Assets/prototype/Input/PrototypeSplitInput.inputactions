@@ -35,6 +35,16 @@
                     "interactions": "",
                     "initialStateCheck": false,
                     "priority": 0
+                },
+                {
+                    "name": "Surface",
+                    "type": "Button",
+                    "id": "8e2a2b8b-ed30-45a6-b19b-3d2a2ca12a4e",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false,
+                    "priority": 0
                 }
             ],
             "bindings": [
@@ -147,6 +157,28 @@
                     "action": "Jump",
                     "isComposite": false,
                     "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "1732e262-dd65-4695-8260-8e48e58584e8",
+                    "path": "<Keyboard>/q",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Surface",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "d395fbb8-eee8-49b1-9fb9-4fe3cc1e3533",
+                    "path": "<Gamepad>/buttonNorth",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Surface",
+                    "isComposite": false,
+                    "isPartOfComposite": false
                 }
             ]
         },
@@ -178,6 +210,16 @@
                     "name": "Jump",
                     "type": "Button",
                     "id": "cfc2dfd1-0109-4174-ac1a-ef335d133205",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false,
+                    "priority": 0
+                },
+                {
+                    "name": "Surface",
+                    "type": "Button",
+                    "id": "647b431a-edff-4255-b844-6d38970309e7",
                     "expectedControlType": "",
                     "processors": "",
                     "interactions": "",
@@ -282,6 +324,17 @@
                     "processors": "",
                     "groups": "",
                     "action": "Jump",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "03e3dd25-73f1-4a9b-b3cd-2da917e43b75",
+                    "path": "<Keyboard>/rightShift",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Surface",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

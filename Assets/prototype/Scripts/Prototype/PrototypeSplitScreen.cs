@@ -55,7 +55,7 @@ namespace TwoTails.Prototype
                     surface.gameObject.AddComponent<Image>().color=Color.clear;
                     surface.gameObject.AddComponent<PrototypeOrbitDrag>().Configure(cameras[i]);
                 }
-                PrototypeTestMenu.TextAt(viewport,i==0?"P1 Fox":"P2 Monkey",new Vector2(0.5f,0.94f),new Vector2(450,60),30);
+                PrototypeTestMenu.TextAt(viewport,i==0?"P1 Fox":"P2 Monkey",new Vector2(0.5f,0.94f),new Vector2(450,60),30).gameObject.AddComponent<AnimalNameLabel>().Configure(players[i].GetComponent<PrototypeAnimal>(),i==0?"P1 ":"P2 ");
                 var text=PrototypeTestMenu.TextAt(viewport,"",new Vector2(0.5f,0.84f),new Vector2(700,80));
                 text.gameObject.AddComponent<PrototypeInteractionPrompt>().Configure(players[i].GetComponent<PrototypeInteractor>(),i==1);
                 PrototypeTestMenu.TextAt(viewport,i==0?"WASD / E | Drag / Wheel":"Arrows / 0 | Numpad 8 2 4 6 / 9 3",new Vector2(0.5f,0.07f),new Vector2(700,60),22);
@@ -73,3 +73,4 @@ namespace TwoTails.Prototype
         }
     }
 }
+

@@ -17,6 +17,8 @@ GameObject:
   - component: {fileID: 448037510740778892}
   - component: {fileID: 1064176699982632888}
   - component: {fileID: 8388843293284150265}
+  - component: {fileID: 2777946057577719013}
+  - component: {fileID: 180397984467275472}
   m_Layer: 2
   m_Name: NetworkPlayerPrototype
   m_TagString: Untagged
@@ -220,6 +222,35 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TwoTails.Prototype.PrototypeAnimal
   species: 0
+--- !u!114 &2777946057577719013
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 216471887066900169}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 577e5a055cf019a408e0cde594e29562, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TwoTails.Prototype.AnimalMechanicsActor
+--- !u!114 &180397984467275472
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 216471887066900169}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0cf5efc7ec72abd44be77bb2330ae43d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TwoTails.Prototype.PrototypeSwimmer
+  swimSpeed: 3
+  diveSpeed: 2
+  surfaceSpeed: 2
+  surfaceOffset: 0.8
+  floorClearance: 0.15
 --- !u!1 &1948713233361753325
 GameObject:
   m_ObjectHideFlags: 0

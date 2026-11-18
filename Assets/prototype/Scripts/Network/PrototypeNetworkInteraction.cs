@@ -46,6 +46,8 @@ namespace TwoTails.Prototype
                 return "";
             if (Time.unscaledTime < feedbackUntil)
                 return feedback;
+            var mechanics=GetComponent<AnimalMechanicsActor>();
+            if(mechanics!=null&&!string.IsNullOrEmpty(mechanics.Prompt))return mechanics.Prompt;
             var target = FindLever();
             if (target == null)
                 return "";
@@ -58,11 +60,22 @@ namespace TwoTails.Prototype
             if (!IsSpawned || !IsOwner)
                 return;
 
+            if(GetComponent<AnimalMechanicsActor>()?.TryRequest()==true)return;
             var target = FindLever();
             if (target != null && target.IsSpawned)
                 UseLeverRpc(target.NetworkObject);
         }
 
+        public void RequestMechanic(int target){if(IsOwner&&IsSpawned)UseMechanicRpc(target);}
+        [Rpc(SendTo.Server,InvokePermission=RpcInvokePermission.Owner)]
+        private void UseMechanicRpc(int target,RpcParams rpc=default)
+        {
+            if(!IsServer||rpc.Receive.SenderClientId!=OwnerClientId||!NetworkPuzzleOccupancy.IsCurrentPlayer(NetworkManager,player))return;
+            var world=AnimalMechanicsWorld.Instance;if(world==null)return;
+            world.TryUse(GetComponent<AnimalMechanicsActor>(),target,out string message);MechanicFeedbackRpc(message);
+        }
+        [Rpc(SendTo.Owner,InvokePermission=RpcInvokePermission.Server)]
+        private void MechanicFeedbackRpc(string message)=>GetComponent<AnimalMechanicsActor>().Feedback(message);
         [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
         private void UseLeverRpc(NetworkObjectReference target, RpcParams rpc = default)
         {
@@ -90,3 +103,5 @@ namespace TwoTails.Prototype
         }
     }
 }
+
+

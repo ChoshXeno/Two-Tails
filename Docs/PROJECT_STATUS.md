@@ -1,6 +1,6 @@
 # Two Tails project status
 
-Last updated November 10, 2026 (Malaysia time).
+Last updated November 14, 2026 (Malaysia time).
 
 ## Goals and development environment
 
@@ -11,7 +11,7 @@ Two Tails is a mobile two-player cooperative animal puzzle game. Players combine
 
 ### Package inventory
 
-Rechecked `Packages/manifest.json` and `Packages/packages-lock.json` on November 10, 2026; no packages changed. Transport, Services Core, and Authentication resolve transitively.
+Rechecked `Packages/manifest.json` and `Packages/packages-lock.json` on November 14, 2026; no packages changed. Transport, Services Core, and Authentication resolve transitively.
 
 | Package | Status |
 | --- | --- |
@@ -37,7 +37,7 @@ Rechecked `Packages/manifest.json` and `Packages/packages-lock.json` on November
 
 ## Current task and outstanding work
 
-**Current: T07-A developer split-screen and friends test package.** Engineering changes and Windows Xcode export are complete within the checks recorded below; native installation, physical input/network tests and mobile performance remain pending.
+**Current: animal mechanics pass (2026-11-14).** Implemented the requested visibility/UI corrections, walkable animal exchanges, Otter swimming and Beaver dam test areas. T07-D expansion is paused and T08 is deferred. See [animal mechanics and evidence](Animal_Mechanics.md) for verified scope and remaining acceptance.
 
 **Resolved T04 localhost connection follow-up (November 9, 2026).** The Windows player log identified the T03 executable, and the Editor Host logged `NetworkConfig mismatch`. The old network scene disabled NGO scene management and the current T04 scene enables it. A matching independent T04 Windows QA client connected to the live Editor Host on `127.0.0.1:7777`; both processes reported two players. The current T04 Windows player was opened for manual use. See [T04 network puzzles](T04_Network_Puzzles.md) for the executable path and rebuild steps.
 
@@ -112,3 +112,16 @@ T07-A is now **reported complete by the user**. **Implemented:** Fox/Monkey iden
 **Pending / awaiting physical device testing:** graphical Windows executable automation was blocked by Computer Use app-approval timeout; headless results are not graphical acceptance. Different-network friends tests, Android touch/performance, rendered swapped-role Client view, full late-join/reset matrix and exhaustive lag/crush cases remain pending. Mobile URP additional-light shadows are disabled; desktop visual evidence does not validate mobile parity. See [cooperative tests and exact evidence](T07_Cooperative_Tests.md) and [lighting diagnosis](T07_Night_Vision.md). Next: manual graphical and physical-device acceptance, using the final complete Builds/CooperativeTest folder.
 
 Final evidence: final Windows rebuild after label-spacing changes succeeded; current running SplitScreen audit found 0 Missing Scripts, 0 broken serialized references, 0 unsupported materials and exactly 3 puzzle controllers. Editor was left in the observed Play Mode state to avoid interrupting possible user testing. Base commit d289c71; no new commit. Decision journal: https://app.notion.com/p/4140be84637f81219726d6a77589e090
+
+
+## Animal mechanics pass — 2026-11-14
+
+**Implemented:** strict Monkey PBR/transparent/world-label masking with greybox near-view occlusion; Fox-only brightness/gamma; corrected Jump/Interact placement and contextual Dive/Surface; server-validated lobby animal/position exchange; Otter swimming; Beaver unique-log inventory and dam; authoritative rising water; ordinary pool and ramp reservoir; synchronized developer reset. Existing scene/prefab/action GUIDs and the user's uncommitted NetworkSession identity code were preserved. Unity and package versions unchanged. Base commit inspected: `e55d69f`; no commit/push.
+
+**Verified:** final compile and Windows Development Build; both saved scenes zero Missing Scripts/broken references; controlled Fox brightness change produced zero pixel difference in Monkey's matched world crop. Local swap/concurrency/inventory protection/swim probes passed. An independent Windows Client over Sessions + Relay completed the actual collect/deposit/raise-water/swim/exit path, normal Leave/Join persistence, repeated Client resets and unspent-log return. Existing network Lever/AND gate and local Jump/airborne Monkey catch probes passed. Final local menu re-entry had 2 actors, 2 cameras, 1 listener, fresh Console 0 errors/warnings. Detailed evidence and its limits are in [Animal_Mechanics.md](Animal_Mechanics.md).
+
+**Known limits:** the automated Client was headless, not a rendered two-window graphics test. Two earlier auto-positioned swap-back requests were rejected; focused and subsequent complete runs passed, but the earlier rejection cause was not captured. Abrupt Client process termination can leave cloud membership temporarily conflicting (`SessionConflict`); normal Leave/Join passed. Mobile URP additional-light shadows differ from the PC profile. Owner-authoritative movement and BoxCollider-based near-view occlusion retain their documented limitations.
+
+**Awaiting testing on a physical device:** Android/iPhone multi-touch, graphics/shadow parity, performance and real different-network play. **Next acceptance:** interactive controls/UI, rendered online views after swaps, all-angle blackout/wall occlusion, simultaneous peer exchanges under latency. Continue animal mechanism acceptance; do not resume T07-D expansion or T08 without a new request.
+
+Build: `Builds/FriendsTest/TwoTails.exe` plus its complete sibling folder. Editor left at `Prototype_MainMenu`, outside Play Mode; QA processes and rooms closed.

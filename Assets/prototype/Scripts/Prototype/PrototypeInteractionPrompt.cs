@@ -16,6 +16,8 @@ namespace TwoTails.Prototype
 
         private void Update()
         {
+            var mechanics=interactor!=null?interactor.GetComponent<AnimalMechanicsActor>():null;
+            if(mechanics!=null&&!string.IsNullOrEmpty(mechanics.Prompt)){label.text=(debugPlayer?"0: ":"E / Interact: ")+mechanics.Prompt;previous=null;return;}
             var feedback = interactor != null && interactor.isActiveAndEnabled
                 ? interactor.GetFeedback() : PrototypeInteractor.Feedback.Hidden;
             if (feedback == previous)
@@ -36,3 +38,4 @@ namespace TwoTails.Prototype
         }
     }
 }
+

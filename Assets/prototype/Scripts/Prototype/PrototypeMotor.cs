@@ -22,14 +22,14 @@ namespace TwoTails.Prototype
         public PrototypeMotion Motion => IsClimbing ? PrototypeMotion.Climb : controller!=null && !controller.isGrounded ? (verticalSpeed>0 ? PrototypeMotion.Jump : PrototypeMotion.Fall) : moveInput.sqrMagnitude>0.01f ? PrototypeMotion.Run : PrototypeMotion.Idle;
         private void LateUpdate() { if(TryGetComponent<PrototypeAnimal>(out var animal)) animal.ApplyMotion(Motion); }
         public float VerticalSpeed => verticalSpeed;
-        public void RequestJump() { if(controller!=null && controller.isGrounded && !IsClimbing) jumpPending=true; }
-        public void ClearPendingInput() { jumpPending=false; moveInput=Vector2.zero; }
+        public void RequestJump() { if(controller!=null && controller.isGrounded && !IsClimbing && GetComponent<PrototypeSwimmer>()?.IsSwimming!=true) jumpPending=true; }
+        public void ClearPendingInput() { jumpPending=false; moveInput=Vector2.zero; GetComponent<PrototypeSwimmer>()?.ClearInput(); }
         private void OnControllerColliderHit(ControllerColliderHit hit){if(hit.collider.TryGetComponent<CooperativeWeightBox>(out var box))box.Push(this);}
-        public void Warp(Vector3 position){ClearPendingInput();climbing=null;verticalSpeed=0;controller.enabled=false;transform.position=position;controller.enabled=true;}
+        public void Warp(Vector3 position){GetComponent<PrototypeSwimmer>()?.ResetState();ClearPendingInput();climbing=null;verticalSpeed=0;controller.enabled=false;transform.position=position;controller.enabled=true;}
         public void Ride(Vector3 delta){if(enabled&&controller.enabled&&!IsClimbing&&verticalSpeed<=0)controller.Move(delta);}
         public void ResetToSpawn()
         {
-            ClearPendingInput(); climbing=null; verticalSpeed=0;
+            ClearPendingInput(); GetComponent<PrototypeSwimmer>()?.ResetState(); climbing=null; verticalSpeed=0;
             controller.enabled=false; transform.position=spawnPosition; controller.enabled=true;
         }
         private bool ClearAt(Vector3 feet)
@@ -101,6 +101,7 @@ namespace TwoTails.Prototype
 
         private void Update()
         {
+            if(GetComponent<AnimalMechanicsActor>()?.Locked==true){ClearPendingInput();return;}
             if (transform.position.y < resetHeight)
             {
                 ResetToSpawn();
@@ -116,6 +117,7 @@ namespace TwoTails.Prototype
             Vector3 direction = forward * moveInput.y + right * moveInput.x;
 
             float deltaTime = Time.deltaTime;
+            if(GetComponent<PrototypeSwimmer>()?.Move(direction,deltaTime,controller)==true){jumpPending=false;climbing=null;verticalSpeed=0;if(visual!=null&&direction.sqrMagnitude>.0001f)visual.rotation=Quaternion.RotateTowards(visual.rotation,Quaternion.LookRotation(direction),turnSpeed*deltaTime);return;}
             if(Climb(direction,deltaTime))return;
             bool jump=jumpPending && controller.isGrounded; jumpPending=false;
             verticalSpeed = controller.isGrounded && verticalSpeed <= 0f
@@ -134,4 +136,6 @@ namespace TwoTails.Prototype
         }
     }
 }
+
+
 
