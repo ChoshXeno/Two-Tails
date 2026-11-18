@@ -1,6 +1,6 @@
 # Two Tails project status
 
-Last updated November 14, 2026 (Malaysia time).
+Last updated November 18, 2026 (Malaysia time).
 
 ## Goals and development environment
 
@@ -125,3 +125,29 @@ Final evidence: final Windows rebuild after label-spacing changes succeeded; cur
 **Awaiting testing on a physical device:** Android/iPhone multi-touch, graphics/shadow parity, performance and real different-network play. **Next acceptance:** interactive controls/UI, rendered online views after swaps, all-angle blackout/wall occlusion, simultaneous peer exchanges under latency. Continue animal mechanism acceptance; do not resume T07-D expansion or T08 without a new request.
 
 Build: `Builds/FriendsTest/TwoTails.exe` plus its complete sibling folder. Editor left at `Prototype_MainMenu`, outside Play Mode; QA processes and rooms closed.
+
+## Near-view rendering follow-up (2026-11-18)
+
+Implemented an independent fixed diffuse near reveal for ordinary animals. The original player-origin visibility rays used every nearby solid BoxCollider and therefore projected moving occlusion silhouettes, even without a player light. The prototype now restricts the ray blockers to wall, divider and door/gate objects using the current scene naming convention. Ordinary props still use camera depth and real light shadows. New room barriers must follow that convention or receive explicit blocker authoring in a future pass. The ordinary-animal PBR scene light contribution no longer scales with the player radius.
+
+Verified: source inspection and git diff whitespace check. Unity CLI reported the Editor unreachable. Unity 6000.6.8f1 batch startup exited 1 before import with a refused licensing IPC connection and an ERROR_SUCCESS assertion (Logs/TweaksVerify.log). Shader compilation and rendered Local/Online acceptance remain pending. Contextual Beaver HUD, per-slot build/reclaim and reversible water are not present in this checkout. The untracked ACTIVE_TASK.md checklist describes work that could not be confirmed in the current source tree.
+
+## Beaver and near-view tweaks — 2026-11-18
+
+**Reported complete by the user:** the pre-tweak blackout and local lighting, lobby exchange, and Beaver pickup/deposit baseline. Rabbit and Elephant follow this acceptance round.
+
+**Implemented:** retained the pending fixed diffuse near reveal and wall-only occlusion correction. Added per-view Beaver inventory, contextual Pickup and Build/Surface, persistent slot-to-log IDs, ordered build/reclaim, runtime depth-tested outlines and reversible authoritative water. The shared test dam now sits on the dry apron. Existing GUIDs were retained. Base 8c6a1b2.
+
+**Verified after the earlier blocked startup:** live Editor shader inspection and fixed-camera rendered reveal comparison, local Play Mode swap and complete dam loop, online HUD and active-swimmer reset in an Editor Host, and successful Windows Development Build. An independent matching Windows Client over Direct completed the dam loop and duplicate-request checks. Host observed the same completed state. A fresh Client received the retained result after the old slot released. See [November 18 evidence and Inspector configuration](Animal_Mechanics.md#november-18--beaver-and-ordinary-animal-tweaks).
+
+**Next acceptance:** interactive controls and rendered online view, Fox and wall/transparent occlusion at additional angles, Relay and different networks. **Awaiting testing on a physical device:** mobile touch and performance.
+
+## Night lighting follow-up — 2026-11-18
+
+**Implemented:** in `PrototypeNightEnvironment`, night mode temporarily disables realtime shadows on the scene lights and the PC URP Screen Space Ambient Occlusion feature. Developer Lights and component teardown restore their captured original modes. No scene or shared Renderer asset was edited. `Local Light Fade Width` (default 0.2) now smooths the visibility mask used by opaque/transparent night rendering. The existing camera-local near reveal, local lights, and Fox controls remain.
+
+**Cause verified:** the loaded SplitScreen scene had eight realtime `Soft` shadow lights (including the Lever, dam, pool, route and lit-area lamps); the directional daylight was also `Soft` but is disabled at night. The scene has a null LightingDataAsset, ruling out assigned baked lightmaps. PC Renderer has an active SSAO feature (intensity 0.4, radius 0.3), explaining additional contact darkening. Live object-ray blocker filtering only handles the player-centered reveal and was not the floor projection source.
+
+**Verified in the live Editor:** successful Unity script compile with 0 errors and two pre-existing `UAC0009` probe-script warnings; fresh Console after tests had 0 errors/0 warnings. Runtime reflection confirmed all eight night shadow modes `None`, PC SSAO inactive, Developer Lights restoration to `Soft`/active, and reapplication on return to night. Captured Game View with the LeverDoor open and closed; the moving panel collider stayed enabled. Existing Beaver flow was exercised through its handler: collected 3 logs, built all 3 slots, reclaimed the middle slot and restored its outline, observed water target reverse from 0 to -4, then rebuilt and restored target 0. Play Mode state was discarded; Editor returned to `Prototype_MainMenu`. See [night lighting evidence and settings](Animal_Mechanics.md#november-18--night-shadow-and-light-edge-follow-up).
+
+**Awaiting user validation:** walking around a fixed object while observing both live split views, multiple local-light edge positions, rendered Online/Relay view isolation, a Windows Development player, and mobile URP parity. No physical-device, Relay or player-build visual test ran in this task. No commit/push.

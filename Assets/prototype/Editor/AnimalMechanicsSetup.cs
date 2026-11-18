@@ -79,9 +79,9 @@ namespace TwoTails.Editor
     var reservoir=Pool(root,"Rising Reservoir",new Vector3(12,0,-25),12,20,-5,-4,0,true);Ref(world,"reservoir",reservoir);
     Ramp(root,"Reservoir Entry Ramp",new Vector3(12,0,-13),new Vector3(12,-4.5f,-25));
     Box(root,"Dam Footing",new Vector3(12,-4.75f,-25),new Vector3(4,.5f,3),stone);
-    var dam=Point(root,"Dam",new Vector3(12,-4.5f,-25.5f));Ref(world,"dam",dam);
+    var dam=Point(root,"Dam",new Vector3(12,.04f,-10));Ref(world,"dam",dam);
     var mark=Box(dam,"Dam Marker",dam.position+Vector3.up*.6f,new Vector3(3,1.2f,.7f),marker,false);Ref(world,"damMarker",mark.GetComponent<Renderer>());Ref(world,"damLabel",Label(dam,"Add Log (0/3)",dam.position+Vector3.up*2));
-    var placed=new GameObject[3];for(int i=0;i<3;i++)placed[i]=Box(dam,"Installed Log "+i,dam.position+Vector3.up*(.15f+i*.3f),new Vector3(3,.25f,.5f),wood);Array(world,"installedLogs",placed);
+    var placed=new GameObject[3];for(int i=0;i<3;i++)placed[i]=Box(dam,"Installed Log "+i,dam.position+new Vector3((i-1)*1.05f,.55f,0),new Vector3(.9f,.35f,.5f),wood);Array(world,"installedLogs",placed);
     var logs=new Transform[3];for(int i=0;i<3;i++){float z=-16-i*3;float y=(z+13)*.375f;logs[i]=Box(root,"Collectible Log "+i,new Vector3(13,y+.2f,z),new Vector3(.8f,.3f,.35f),wood).transform;Label(logs[i],"Log",logs[i].position+Vector3.up*.7f);}Array(world,"logs",logs);
     Ramp(root,"Far Bank Exit Ramp",new Vector3(12,-4.5f,-30),new Vector3(12,0,-38));Box(root,"Far Bank",new Vector3(12,-.25f,-40),new Vector3(10,.5f,4),stone);Label(root,"OTTER EXIT",new Vector3(12,2,-39));
     Label(root,"ANIMAL TESTS\nLeft: Swimming Pool | Right: Beaver Dam\nNon-Otter deep-water rule: return to shore",new Vector3(0,3,-13));

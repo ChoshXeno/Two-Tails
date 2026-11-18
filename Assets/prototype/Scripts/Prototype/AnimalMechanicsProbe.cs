@@ -32,11 +32,27 @@ namespace TwoTails.Prototype
     actor.GetComponent<PrototypeNetworkInteraction>().RequestMechanic(10+i);actor.GetComponent<PrototypeNetworkInteraction>().RequestMechanic(10+i);yield return new WaitForSeconds(.8f);
     if(!Check(AnimalMechanicsWorld.Count(actor.HeldLogs)==i+1,"unique pickup "+i+" duplicate request did not duplicate inventory"))yield break;
    }
-   yield return Walk(new Vector3(12,0,-24.4f));motor.Facing.rotation=Quaternion.LookRotation(Vector3.back);yield return new WaitForSeconds(.7f);
+   yield return Walk(new Vector3(12,0,-11.15f));motor.Facing.rotation=Quaternion.LookRotation(Vector3.forward);yield return new WaitForSeconds(.7f);
    for(int i=0;i<3;i++){actor.GetComponent<PrototypeNetworkInteraction>().RequestMechanic(20);yield return new WaitForSeconds(.8f);if(!Check(AnimalMechanicsWorld.Instance.Progress==i+1,"deposit "+(i+1)))yield break;}
    Check(actor.HeldLogs==0,"inventory consumed once");
-   yield return Walk(new Vector3(12,0,-12));yield return new WaitForSeconds(15);
+   yield return new WaitForSeconds(15);
    Check(Mathf.Abs(AnimalMechanicsWorld.Instance.State.WaterLevel)<.01f,"authoritative target water level");
+   var world = AnimalMechanicsWorld.Instance;
+   var mechanics = actor.GetComponent<AnimalMechanicsActor>();
+   int reclaim = world.FindTarget(mechanics);
+   if (!Check(world.IsPickup(reclaim), "valid filled slot Pickup target")) yield break;
+   ulong completedSlots = world.State.Slots;
+   float fullWater = world.State.WaterLevel;
+   var interaction = actor.GetComponent<PrototypeNetworkInteraction>();
+   interaction.RequestMechanic(reclaim);
+   interaction.RequestMechanic(reclaim);
+   yield return new WaitForSeconds(2);
+   Check(world.Progress == 2 && mechanics.Inventory == 1 && world.State.WaterLevel < fullWater,
+       "duplicate reclaim returns exactly one log and starts drainage");
+   mechanics.RequestBuild();
+   yield return new WaitForSeconds(4);
+   Check(world.State.Slots == completedSlots && mechanics.Inventory == 0 &&
+       Mathf.Abs(world.State.WaterLevel - fullWater) < .01f, "rebuild restores the exact slot and raises water");
    yield return Approach(new Vector3(5,.1f,-5),Vector3.back,1);
    Check(actor.GetComponent<PrototypeAnimal>().Species==PrototypeSpecies.Monkey,"exchange back to original animal");
    yield return Approach(new Vector3(-5,.1f,-6.1f),Vector3.forward,0);
@@ -75,5 +91,3 @@ namespace TwoTails.Prototype
  }
 }
 #endif
-
-

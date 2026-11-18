@@ -12,23 +12,24 @@ namespace TwoTails.Prototype
         [SerializeField, Tooltip("Jump action touch control, visible only with a local player.")] private GameObject jump;
         private PrototypeNetworkInteraction interaction;
         private NetworkPlayerPrototype current;
-        private float nextRefresh;
+        private UnityEngine.UI.Text interactLabel;
+        private AnimalMechanicsActor actor;
+        private void Awake() => interactLabel = interact.GetComponentInChildren<UnityEngine.UI.Text>(true);
 
         private void OnEnable() => interact.onClick.AddListener(Press);
         private void OnDisable() => interact.onClick.RemoveListener(Press);
 
         private void Update()
         {
-            if (Time.unscaledTime < nextRefresh)
-                return;
-            nextRefresh = Time.unscaledTime + 0.1f;
             if (current != session.LocalPlayer)
             {
                 current = session.LocalPlayer;
                 interaction = current != null ? current.GetComponent<PrototypeNetworkInteraction>() : null;
+                actor = current != null ? current.GetComponent<AnimalMechanicsActor>() : null;
             }
 
             interact.gameObject.SetActive(interaction != null);
+            if (interactLabel != null) interactLabel.text = actor?.HasPickupTarget == true ? "Pickup" : "Interact";
             if(jump!=null)jump.SetActive(interaction!=null);
             prompt.text = interaction != null ? interaction.GetPrompt() : "";
             if (plateStatus != null)

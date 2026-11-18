@@ -41,6 +41,7 @@ namespace TwoTails.Prototype
             hasFocus = Application.isFocused;
             interact.performed += OnInteract;
             if(jump!=null) jump.performed+=OnJump;
+            if (surface != null) surface.performed += OnAuxiliary;
             gameplay.Enable();
         }
 
@@ -48,6 +49,7 @@ namespace TwoTails.Prototype
         {
             interact.performed -= OnInteract;
             if(jump!=null) jump.performed-=OnJump;
+            if (surface != null) surface.performed -= OnAuxiliary;
             gameplay.Disable();
             motor.ClearPendingInput();
         }
@@ -88,6 +90,12 @@ namespace TwoTails.Prototype
             motor.SetMoveInput(input); GetComponent<PrototypeSwimmer>()?.SetInput(jump?.IsPressed()==true,surface?.IsPressed()==true);
         }
 
+        private void OnAuxiliary(InputAction.CallbackContext context)
+        {
+            if (hasFocus && !paused && !EditingText)
+                GetComponent<AnimalMechanicsActor>()?.RequestBuild();
+        }
+
         private void OnJump(InputAction.CallbackContext context) { if(hasFocus && !paused && !EditingText) motor.RequestJump(); }
 
         private void OnInteract(InputAction.CallbackContext context)
@@ -109,5 +117,3 @@ namespace TwoTails.Prototype
         }
     }
 }
-
-

@@ -37,16 +37,28 @@ Shader "Two Tails/Prototype Animal Vision"
     data.shadowMask=half4(1,1,1,1);
     // Low cool hemispherical fill reveals shapes without flattening direct-light shadows.
     half hemi=0.18+0.82*saturate(dot(normal,normalize(half3(-0.4,0.8,-0.3))));
-    data.bakedGI=lerp(half3(.03,.04,.06),_AnimalNightTint.rgb*visibility*_AnimalVision.z*hemi,_AnimalVisionEnabled);
+    bool nearReveal=_AnimalVisionEnabled>.5 && _AnimalVision.w<.5;
+    data.bakedGI=nearReveal?half3(0,0,0):lerp(half3(.03,.04,.06),_AnimalNightTint.rgb*visibility*_AnimalVision.z*hemi,_AnimalVisionEnabled);
     SurfaceData surface=(SurfaceData)0;
     surface.albedo=_BaseColor.rgb;surface.alpha=1;surface.occlusion=1;
     surface.smoothness=0.18;surface.normalTS=half3(0,0,1);
-    half4 lit=UniversalFragmentPBR(data,surface);lit.rgb=AnimalFinish(lit.rgb,visibility,AnimalLocalLight(i.positionWS,i.positionCS));return lit;   }
+    half4 lit=UniversalFragmentPBR(data,surface);
+    float localLight=AnimalLocalLight(i.positionWS,i.positionCS);
+    if(nearReveal)
+    {
+     // Fixed diffuse fill carries no view-dependent highlight or shadow map.
+     // The locally lit component eases into darkness instead of switching at
+     // the visibility threshold; real scene-light shadows are suppressed at night.
+     half3 fill=surface.albedo*_AnimalNightTint.rgb*_AnimalVision.z*hemi*visibility;
+     float lightReveal=smoothstep(0,max(_AnimalLightFadeWidth,.001),saturate(localLight));
+     lit.rgb=lit.rgb*lightReveal+fill;
+    }
+    else lit.rgb=AnimalFinish(lit.rgb,visibility,localLight);
+    return lit;
+   }
    ENDHLSL
   }
   UsePass "Universal Render Pipeline/Lit/ShadowCaster"
   UsePass "Universal Render Pipeline/Lit/DepthOnly"
  }
 }
-
-

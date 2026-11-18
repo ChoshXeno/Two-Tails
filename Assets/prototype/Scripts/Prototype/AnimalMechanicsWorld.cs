@@ -16,7 +16,17 @@ namespace TwoTails.Prototype
   [SerializeField] private GameObject[] installedLogs;
   [SerializeField] private PrototypeWaterVolume reservoir;
   [SerializeField] private TextMesh damLabel;
-  [SerializeField,Min(1),Tooltip("Number of logs to complete this test dam; must not exceed available logs.")] private int requiredLogs=3;
+  [SerializeField, Tooltip("Optional replacement prefab per installed-log slot. Keep slot order stable across peers.")]
+  private GameObject[] slotPrefabs;
+  private DamSlotPresentation[] slots;
+  private Mesh outlineMesh;
+  private Material outlineMaterial;
+  private PrototypeNightEnvironment night;
+  internal PrototypeNightEnvironment Night => night;
+  public const int BuildTarget = 20;
+  private const int ReclaimStart = 40;
+  public int RequiredLogs => slots?.Length ?? 0;
+  public float WaterTarget => RequiredLogs > 0 && Progress == RequiredLogs ? reservoir.TargetLevel : reservoir.InitialLevel;
   [SerializeField,Min(.01f),Tooltip("Authoritative water rise speed in metres per second.")] private float riseSpeed=.3f;
   [SerializeField,Min(.1f),Tooltip("Chest to target interaction distance.")] private float interactionDistance=1.5f;
   [SerializeField,Range(0,89),Tooltip("Horizontal angle from the actual facing Visual.")] private float interactionAngle=45;
@@ -27,45 +37,142 @@ namespace TwoTails.Prototype
   private readonly Collider[] clearance=new Collider[32];
   private MaterialPropertyBlock colors;
   private Vector3 startA,startB;
-  private int lastProgress=-1;
+  private ulong displayedSlots = ulong.MaxValue;
   public AnimalMechanicsState State {get;private set;}
   public bool Authority=>!networked||(net!=null&&net.IsSpawned&&net.IsServer);
   public double Now=>networked&&net!=null&&net.IsSpawned?net.NetworkManager.ServerTime.Time:Time.timeAsDouble;
-  public int Progress=>Count(State.Deposited);
+  public int Progress => State.Progress;
   public static int Count(int mask){int n=0;for(;mask!=0;mask&=mask-1)n++;return n;}
-  private void Awake(){colors=new MaterialPropertyBlock();if(!(Application.isEditor||Debug.isDebugBuild)&&resetPoint!=null)resetPoint.gameObject.SetActive(false);Instance=this;net=GetComponent<AnimalMechanicsNetwork>();startA=displays[0].position;startB=displays[1].position;if(!networked)Initialize();}
-  private void OnDestroy(){if(Instance==this)Instance=null;}
+  private void Awake(){colors=new MaterialPropertyBlock();if(!(Application.isEditor||Debug.isDebugBuild)&&resetPoint!=null)resetPoint.gameObject.SetActive(false);Instance=this;net=GetComponent<AnimalMechanicsNetwork>();startA=displays[0].position;startB=displays[1].position;ConfigureSlots();if(!networked)Initialize();}
+  private void OnDestroy()
+  {
+   if (Instance == this) Instance = null;
+   if (outlineMesh != null) Destroy(outlineMesh);
+   if (outlineMaterial != null) Destroy(outlineMaterial);
+  }
+
+  private void ConfigureSlots()
+  {
+   night = GetComponentInParent<PrototypeNightEnvironment>() ?? FindAnyObjectByType<PrototypeNightEnvironment>();
+   outlineMesh = DamSlotPresentation.CreateBoxOutline();
+   outlineMaterial = new Material(damMarker.sharedMaterial) { name = "Dam slot outline" };
+   outlineMaterial.SetColor("_BaseColor", new Color(1f, .77f, .36f, 1f));
+   damMarker.gameObject.SetActive(false);
+   var configured = new List<DamSlotPresentation>();
+   for (int index = 0; index < installedLogs.Length && configured.Count < AnimalMechanicsState.SlotLimit; index++)
+   {
+    var anchor = installedLogs[index];
+    if (anchor == null) continue;
+    var prefab = slotPrefabs != null && index < slotPrefabs.Length ? slotPrefabs[index] : null;
+    configured.Add(new DamSlotPresentation(anchor, prefab, outlineMaterial, outlineMesh));
+   }
+   slots = configured.ToArray();
+   if (slots.Length > Mathf.Min(logs.Length, AnimalMechanicsState.LogLimit))
+    Debug.LogWarning("The dam has more slots than available logs.", this);
+   ApplySlots();
+  }
+
+  private void ApplySlots()
+  {
+   if (displayedSlots == State.Slots) return;
+   ulong previous = displayedSlots;
+   displayedSlots = State.Slots;
+   for (int index = 0; index < slots.Length; index++)
+   {
+    int shift = index * 4;
+    if (((previous >> shift) & 15UL) != ((displayedSlots >> shift) & 15UL))
+     slots[index].Apply(State.GetSlot(index) != 0);
+   }
+   damLabel.text = Progress == RequiredLogs ? "Dam complete" : $"Dam ({Progress}/{RequiredLogs})";
+  }
   public void Initialize(){if(!Authority)return;Apply(new AnimalMechanicsState{SpeciesA=(byte)PrototypeSpecies.Otter,SpeciesB=(byte)PrototypeSpecies.Beaver,PositionA=startA,PositionB=startB,WaterLevel=reservoir.InitialLevel});Publish();}
   private bool Valid(AnimalMechanicsActor a)=>a!=null&&a.isActiveAndEnabled&&(networked?(NetworkManager.Singleton!=null&&(NetworkManager.Singleton.IsServer?NetworkPuzzleOccupancy.IsCurrentPlayer(NetworkManager.Singleton,a.GetComponent<NetworkPlayerPrototype>()):a.GetComponent<NetworkPlayerPrototype>().IsSpawned&&a.GetComponent<NetworkPlayerPrototype>().IsOwner)):a.GetComponent<PrototypeMotor>().isActiveAndEnabled);
-  private Transform Target(int id)=>id<2&&id>=0?displays[id]:id>=10&&id<10+logs.Length?logs[id-10]:id==20?dam:id==30&&(Application.isEditor||Debug.isDebugBuild)?resetPoint:null;
-  private Vector3 Point(int id)=>Target(id).position+Vector3.up*(id>=10&&id<20?.5f:1);
-  public int FindTarget(AnimalMechanicsActor actor)
+  private const int ExtraLogStart = 60;
+  private int LogIndex(int id) => id >= ExtraLogStart ? id - ExtraLogStart + 10 : id >= 10 && id < 20 ? id - 10 : -1;
+  private bool IsLog(int id) => LogIndex(id) >= 0 && LogIndex(id) < Mathf.Min(logs.Length, AnimalMechanicsState.LogLimit);
+  private bool IsReclaim(int id) => id >= ReclaimStart && id < ReclaimStart + RequiredLogs;
+  public bool IsPickup(int id) => IsLog(id) || IsReclaim(id);
+  private bool IsBeaver(AnimalMechanicsActor actor) => actor != null &&
+   actor.GetComponent<PrototypeAnimal>().Species == PrototypeSpecies.Beaver;
+
+  private Transform Target(int id)
   {
-   int best=-1;float nearest=interactionDistance;Vector3 origin=actor.transform.position+Vector3.up;
-   for(int id=0;id<=30;id++){var target=Target(id);if(target==null||!target.gameObject.activeInHierarchy)continue;float d=Vector3.Distance(origin,Point(id));if(d<nearest){nearest=d;best=id;}}
-   return best;
-  }
-  private string Check(AnimalMechanicsActor actor,int id)
-  {
-   var target=Target(id);if(!Valid(actor)||target==null)return "Interaction unavailable";
-   if(actor.Locked)return "Please wait";
-   Vector3 origin=actor.transform.position+Vector3.up,offset=Point(id)-origin;
-   if(offset.magnitude>interactionDistance)return "Move closer";
-   if(Vector3.Angle(Vector3.ProjectOnPlane(actor.GetComponent<PrototypeMotor>().Facing.forward,Vector3.up),Vector3.ProjectOnPlane(offset,Vector3.up))>interactionAngle)return "Face the target";
-   if(PrototypeInteractor.IsBlocked(origin,offset,offset.magnitude,actor.transform,target,~0,sight))return "Interaction blocked";
+   if (id >= 0 && id < 2) return displays[id];
+   if (id == BuildTarget) return dam;
+   if (id == 30) return Application.isEditor || Debug.isDebugBuild ? resetPoint : null;
+   if (IsReclaim(id)) return slots[id - ReclaimStart].Piece;
+   if (IsLog(id)) return logs[LogIndex(id)];
    return null;
   }
-  public string Prompt(AnimalMechanicsActor actor,int id)
+
+  private Vector3 Point(int id)
   {
-   var rejection=Check(actor,id);if(rejection!=null)return rejection;
-   if(id<2)return "Swap to "+(PrototypeSpecies)(id==0?State.SpeciesA:State.SpeciesB);
-   if(id<20)return "Pick up Log";
-   if(id==20)return Progress>=requiredLogs?"Dam complete":$"Add Log ({Progress}/{requiredLogs})";
+   if (IsReclaim(id)) return slots[id - ReclaimStart].Anchor.position;
+   return Target(id).position + Vector3.up * (IsLog(id) ? .5f : 1f);
+  }
+
+  public int FindTarget(AnimalMechanicsActor actor)
+  {
+   int best = -1;
+   float nearest = float.PositiveInfinity;
+   Vector3 origin = actor.transform.position + Vector3.up;
+   bool beaver = IsBeaver(actor);
+   for (int id = 0; id < ExtraLogStart + AnimalMechanicsState.LogLimit - 10; id++)
+   {
+    if (id == BuildTarget || (!beaver && IsPickup(id))) continue;
+    var target = Target(id);
+    if (target == null || !target.gameObject.activeInHierarchy) continue;
+    float distance = (Point(id) - origin).sqrMagnitude;
+    if (distance >= nearest || Check(actor, id) != null) continue;
+    nearest = distance;
+    best = id;
+   }
+   return best;
+  }
+
+  private string Check(AnimalMechanicsActor actor, int id)
+  {
+   var target = Target(id);
+   if (!Valid(actor) || target == null || !target.gameObject.activeInHierarchy) return "Interaction unavailable";
+   if (actor.Locked) return "Please wait";
+   Vector3 origin = actor.transform.position + Vector3.up;
+   Vector3 offset = Point(id) - origin;
+   if (offset.magnitude > interactionDistance) return "Move closer";
+   if (Vector3.Angle(Vector3.ProjectOnPlane(actor.GetComponent<PrototypeMotor>().Facing.forward, Vector3.up),
+       Vector3.ProjectOnPlane(offset, Vector3.up)) > interactionAngle) return "Face the target";
+   if (PrototypeInteractor.IsBlocked(origin, offset, offset.magnitude, actor.transform, target, ~0, sight))
+    return "Interaction blocked";
+   return null;
+  }
+
+  public bool GetBuildStatus(AnimalMechanicsActor actor, out string reason)
+  {
+   reason = null;
+   if (!IsBeaver(actor) || !Valid(actor) ||
+       (Point(BuildTarget) - (actor.transform.position + Vector3.up)).sqrMagnitude > interactionDistance * interactionDistance)
+    return false;
+   reason = BuildRejection(actor);
+   return true;
+  }
+
+  private string BuildRejection(AnimalMechanicsActor actor)
+  {
+   if (!IsBeaver(actor)) return "Only Beaver can build the dam";
+   if (Progress >= RequiredLogs) return "Dam complete";
+   if (actor.HeldLogs == 0) return "Collect a log first";
+   return Check(actor, BuildTarget);
+  }
+
+  public string Prompt(AnimalMechanicsActor actor, int id)
+  {
+   if (id < 2) return "Swap to " + (PrototypeSpecies)(id == 0 ? State.SpeciesA : State.SpeciesB);
+   if (IsLog(id)) return "Pick up wood";
+   if (IsReclaim(id)) return "Reclaim dam wood";
    return "Reset animal test";
   }
   public bool TryUse(AnimalMechanicsActor actor,int id,out string message)
   {
-   message=Check(actor,id);if(!Authority){message="Waiting for host";return false;}if(message!=null)return false;
+   if(!Authority){message="Waiting for host";return false;} Physics.SyncTransforms(); message=Check(actor,id);if(message!=null)return false;
    if(cooldowns.TryGetValue(actor,out double until)&&Now<until){message="Please wait";return false;}cooldowns[actor]=Now+.15;
    var species=actor.GetComponent<PrototypeAnimal>().Species;var next=State;
    if(id<2)
@@ -80,19 +187,32 @@ namespace TwoTails.Prototype
     if(networked)actor.GetComponent<NetworkPlayerPrototype>().Exchange(replacement,to);else{actor.GetComponent<PrototypeAnimal>().Apply(replacement);actor.Transition(to);}
     message="Now playing "+replacement;
    }
-   else if(id<20)
+   else if (IsLog(id))
    {
-    if(species!=PrototypeSpecies.Beaver){message="Only Beaver can collect logs";return false;}
-    int bit=1<<(id-10);if((next.Picked&bit)!=0){message="Log already collected";return false;}next.Picked|=bit;actor.SetHeldLogs(actor.HeldLogs|bit);message="Log collected";
+    if (species != PrototypeSpecies.Beaver) { message = "Only Beaver can collect wood"; return false; }
+    int bit = 1 << LogIndex(id);
+    if ((next.Picked & bit) != 0) { message = "Wood already collected"; return false; }
+    next.Picked |= bit;
+    actor.SetHeldLogs(actor.HeldLogs | bit);
+    message = "Wood collected";
    }
-   else if(id==20)
+   else if (id == BuildTarget)
    {
-    if(species!=PrototypeSpecies.Beaver){message="Only Beaver can build the dam";return false;}
-    if(Progress>=requiredLogs){message="Dam complete";return false;}
-    if(actor.HeldLogs==0){message="Collect a log first";return false;}
-    int bit=actor.HeldLogs&-actor.HeldLogs;actor.SetHeldLogs(actor.HeldLogs&~bit);next.Deposited|=bit;message=$"Log added ({Count(next.Deposited)}/{requiredLogs})";
+    message = BuildRejection(actor);
+    if (message != null) return false;
+    int inventory = actor.HeldLogs;
+    if (!next.TryBuild(RequiredLogs, ref inventory)) { message = "No available dam slot"; return false; }
+    actor.SetHeldLogs(inventory);
+    message = $"Built wood ({next.Progress}/{RequiredLogs})";
    }
-   else{ResetTest();message="Animal test reset";return true;}
+   else if (IsReclaim(id))
+   {
+    if (species != PrototypeSpecies.Beaver) { message = "Only Beaver can reclaim wood"; return false; }
+    int inventory = actor.HeldLogs;
+    if (!next.TryReclaim(id - ReclaimStart, ref inventory)) { message = "Slot already empty"; return false; }
+    actor.SetHeldLogs(inventory);
+    message = $"Wood reclaimed ({next.Progress}/{RequiredLogs})";
+   }   else{ResetTest();message="Animal test reset";return true;}
    next.Revision++;Apply(next);Publish();return true;
   }
   private bool Safe(Vector3 feet,Transform actor,Transform display)
@@ -111,29 +231,36 @@ namespace TwoTails.Prototype
    for(int i=0;i<4;i++)if((used&(1<<i))==0)return (PrototypeSpecies)i;
    return preferred;
   }
-  public void ReturnLogs(int bits){if(!Authority)return;var s=State;s.Picked&=~(bits&~s.Deposited);Apply(s);Publish();}
+  public void ReturnLogs(int bits){if(!Authority)return;var s=State;if(bits==0)return;s.Picked&=~bits;s.Revision++;Apply(s);Publish();}
   public void ResetTest()
   {
-   if(!Authority)return;var next=State;next.Picked=next.Deposited=0;next.WaterLevel=reservoir.InitialLevel;next.Revision++;cooldowns.Clear();
+   if(!Authority)return;var next=State;next.Picked=0;next.Slots=0;next.WaterLevel=reservoir.InitialLevel;next.Revision++;cooldowns.Clear();
    int index=0;foreach(var actor in FindObjectsByType<AnimalMechanicsActor>())if(Valid(actor))
    {actor.SetHeldLogs(0);Vector3 safe=new Vector3(-1.5f+3*index++,.1f,-4);if(networked)actor.GetComponent<NetworkPlayerPrototype>().Exchange(actor.GetComponent<PrototypeAnimal>().Species,safe);else actor.Transition(safe);}
    Apply(next);Publish();
   }
-  private void FixedUpdate(){if(!Authority||Progress<requiredLogs||State.WaterLevel>=reservoir.TargetLevel)return;var next=State;next.WaterLevel=Mathf.MoveTowards(next.WaterLevel,reservoir.TargetLevel,riseSpeed*Time.fixedDeltaTime);Apply(next);Publish();}
+  private void FixedUpdate()
+  {
+   if (!Authority || State.WaterLevel == WaterTarget) return;
+   var next = State;
+   next.WaterLevel = Mathf.MoveTowards(next.WaterLevel, WaterTarget, riseSpeed * Time.fixedDeltaTime);
+   Apply(next);
+   Publish();
+  }
   private void Publish(){if(networked)net.Publish(State);}
   public void Apply(AnimalMechanicsState state)
   {
-   State=state;displays[0].position=state.PositionA;displays[1].position=state.PositionB;
+   var previous = State;
+   State = state;
+   reservoir.SetLevel(state.WaterLevel);
+   if (previous.Revision == state.Revision && previous.WaterLevel != state.WaterLevel &&
+       previous.PositionA == state.PositionA && previous.PositionB == state.PositionB &&
+       previous.SpeciesA == state.SpeciesA && previous.SpeciesB == state.SpeciesB &&
+       previous.Picked == state.Picked && previous.Slots == state.Slots) return;
+   displays[0].position=state.PositionA;displays[1].position=state.PositionB;
    for(int i=0;i<2;i++){displayVisuals[i].GetPropertyBlock(colors);colors.SetColor("_BaseColor",PrototypeAnimal.ColorFor((PrototypeSpecies)(i==0?state.SpeciesA:state.SpeciesB)));displayVisuals[i].SetPropertyBlock(colors);var text=displays[i].GetComponentInChildren<TextMesh>();text.text=((PrototypeSpecies)(i==0?state.SpeciesA:state.SpeciesB)).ToString();}
-   for(int i=0;i<logs.Length;i++)logs[i].gameObject.SetActive((state.Picked&(1<<i))==0);
-   reservoir.SetLevel(state.WaterLevel);int progress=Progress;
-   if(lastProgress!=progress){lastProgress=progress;for(int i=0;i<installedLogs.Length;i++)installedLogs[i].SetActive(i<progress);damMarker.GetPropertyBlock(colors);colors.SetColor("_BaseColor",progress>=requiredLogs?new Color(.1f,1,.2f,.35f):new Color(1,.08f,.05f,.35f));damMarker.SetPropertyBlock(colors);damLabel.text=progress>=requiredLogs?"Dam complete":$"Add Log ({progress}/{requiredLogs})";}
-  }
-  private void Update(){for(int i=0;i<2;i++){double remaining=(i==0?State.BusyA:State.BusyB)-Now;displayVisuals[i].transform.localScale=Vector3.one*Mathf.Lerp(1,.25f,Mathf.Clamp01((float)(remaining/swapDuration)));}}
+   for(int i=0;i<Mathf.Min(logs.Length, AnimalMechanicsState.LogLimit);i++)if(logs[i]!=null)logs[i].gameObject.SetActive((state.Picked&(1<<i))==0);
+   ApplySlots();
+  }  private void Update(){for(int i=0;i<2;i++){double remaining=(i==0?State.BusyA:State.BusyB)-Now;displayVisuals[i].transform.localScale=Vector3.one*Mathf.Lerp(1,.25f,Mathf.Clamp01((float)(remaining/swapDuration)));}}
  }
 }
-
-
-
-
-

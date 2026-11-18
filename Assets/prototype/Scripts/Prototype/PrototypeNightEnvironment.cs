@@ -4,6 +4,7 @@ using UnityEngine.Rendering;
 using UnityEngine.InputSystem;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using UnityEngine.Rendering.Universal;
 namespace TwoTails.Prototype
 {
  public sealed class PrototypeNightEnvironment : MonoBehaviour
@@ -11,6 +12,7 @@ namespace TwoTails.Prototype
   [SerializeField, Tooltip("Prototype-only URP material shader, never applied outside this scene.")] private Shader nightShader;
   [SerializeField, Min(0), Tooltip("Monkey fully clear radius in world metres from its feet.")] private float visibleRadius=3;
   [SerializeField, Min(0.01f), Tooltip("World-space fade width beyond the clear radius.")] private float fadeWidth=3;
+  [SerializeField, Range(0.01f,1f), Tooltip("Night-only light-mask contribution width. Higher values soften the transition from locally lit space to black.")] private float localLightFadeWidth=0.2f;
   [SerializeField, Range(0,2), Tooltip("Unlit surface brightness for animal night vision.")] private float nightBrightness=0.28f;
   [SerializeField, Tooltip("Cool night fill, modulated by world-space surface orientation.")] private Color nightTint=new Color(0.38f,0.52f,0.75f);
   [SerializeField,Range(.25f,3),Tooltip("Fox camera only: linear night-vision brightness multiplier.")] private float foxBrightness=1.4f;
@@ -20,12 +22,22 @@ namespace TwoTails.Prototype
   private readonly Matrix4x4[] blockerMatrices=new Matrix4x4[64];
   public bool FoxNightVision { get; private set; }=true;
   [SerializeField, Tooltip("Local developer daylight source; never networked.")] private Light daylight;
+  [SerializeField, Tooltip("Suppress scene-light shadow maps during night while retaining direct lighting and surface shading. Developer daylight restores each light's original shadow mode.")] private bool suppressRealtimeShadowsAtNight=true;
+  [SerializeField, Tooltip("Disable URP screen-space ambient occlusion during night to remove contact-shadow dark patches. Original Renderer Feature state is restored for Developer Lights.")] private bool suppressScreenSpaceAmbientOcclusionAtNight=true;
   public bool DeveloperLights { get; private set; }
   private readonly Dictionary<Material,Material> copies=new();
+  private readonly Dictionary<Light,LightShadows> originalShadowModes=new();
+  private readonly Dictionary<ScriptableRendererFeature,bool> originalNightFeatures=new();
 
 
   private GameObject ui;
-  private void Awake(){DeveloperLights=false;FoxNightVision=true;if(daylight!=null)daylight.enabled=false;}
+  private void Awake()
+  {
+   DeveloperLights=false;FoxNightVision=true;
+   CaptureOriginalShadowModes();
+   if(daylight!=null)daylight.enabled=false;
+   ApplyNightShadowPolicy();
+  }
   private void OnEnable(){RenderPipelineManager.beginCameraRendering+=BeforeCamera;RenderPipelineManager.endCameraRendering+=AfterCamera;}
   private void Start()
   {
@@ -64,6 +76,42 @@ namespace TwoTails.Prototype
   {
    if(!(Application.isEditor||Debug.isDebugBuild))return;
    DeveloperLights=!DeveloperLights;if(daylight!=null)daylight.enabled=DeveloperLights;
+   ApplyNightShadowPolicy();
+  }
+  private void CaptureOriginalShadowModes()
+  {
+   foreach(var light in FindObjectsByType<Light>(FindObjectsInactive.Include))
+    if(light!=null&&!originalShadowModes.ContainsKey(light))originalShadowModes.Add(light,light.shadows);
+   foreach(var data in Resources.FindObjectsOfTypeAll<ScriptableRendererData>())
+    foreach(var feature in data.rendererFeatures)
+     if(feature!=null&&feature.GetType().Name=="ScreenSpaceAmbientOcclusion"&&!originalNightFeatures.ContainsKey(feature))
+      originalNightFeatures.Add(feature,feature.isActive);
+  }
+  private void ApplyNightShadowPolicy()
+  {
+   CaptureOriginalShadowModes();
+   foreach(var pair in originalShadowModes)
+   {
+    if(pair.Key==null)continue;
+    pair.Key.shadows=suppressRealtimeShadowsAtNight&&!DeveloperLights?LightShadows.None:pair.Value;
+   }
+   ApplyNightFeaturePolicy(false);
+  }
+  private void ApplyNightFeaturePolicy(bool restoreOriginal)
+  {
+   foreach(var data in Resources.FindObjectsOfTypeAll<ScriptableRendererData>())
+   {
+    bool changed=false;
+    foreach(var feature in data.rendererFeatures)
+    {
+     if(feature==null||!originalNightFeatures.TryGetValue(feature,out bool original))continue;
+     bool active=restoreOriginal?original:suppressScreenSpaceAmbientOcclusionAtNight&&!DeveloperLights?false:original;
+     if(feature.isActive==active)continue;
+     feature.SetActive(active);
+     changed=true;
+    }
+    if(changed)data.SetDirty();
+   }
   }
   private void Update()
   {
@@ -71,6 +119,15 @@ namespace TwoTails.Prototype
    if(EventSystem.current?.currentSelectedGameObject?.GetComponent<InputField>()?.isFocused==true)return;
    if(Keyboard.current?.pKey.wasPressedThisFrame==true)Toggle();
    if(Keyboard.current?.nKey.wasPressedThisFrame==true)ToggleFox();
+  }
+  // Room barriers block the reveal. Ordinary props are occluded by camera depth
+  // and only cast shadows from real scene lights.
+  private static bool BlocksReveal(BoxCollider box)
+  {
+   string name=box.gameObject.name;
+   return name.Contains("Wall",System.StringComparison.OrdinalIgnoreCase)
+       ||name.Contains("Divider",System.StringComparison.OrdinalIgnoreCase)
+       ||name=="DoorPanel"||name=="Gate A"||name=="Gate B"||name=="Balance Exit Gate";
   }
   private void BeforeCamera(ScriptableRenderContext context,Camera camera)
   {
@@ -80,23 +137,21 @@ namespace TwoTails.Prototype
    var cmd=CommandBufferPool.Get("Animal view constants");
    Vector3 position=actor!=null?actor.transform.position:Vector3.zero;
    cmd.SetGlobalVector("_AnimalVision",new Vector4(visibleRadius,fadeWidth,nightBrightness,DeveloperLights||(fox&&FoxNightVision)?1:0));
+   cmd.SetGlobalFloat("_AnimalLightFadeWidth",localLightFadeWidth);
    cmd.SetGlobalVector("_AnimalPosition",position);
    cmd.SetGlobalColor("_AnimalNightTint",nightTint);
    cmd.SetGlobalVector("_AnimalFox",new Vector4(fox&&FoxNightVision&&!DeveloperLights?1:0,foxBrightness,foxGamma,DeveloperLights?1:0));
    cmd.SetGlobalFloat("_AnimalVisionEnabled",1);
    int count=0;
-   int hits=Physics.OverlapSphereNonAlloc(position,visibleRadius+fadeWidth,blockers,~(1<<2),QueryTriggerInteraction.Ignore);
-   for(int i=0;i<hits&&count<blockerMatrices.Length;i++)if(blockers[i] is BoxCollider box && box.enabled)
+   int hits=DeveloperLights||(fox&&FoxNightVision) ? 0 :
+       Physics.OverlapSphereNonAlloc(position,visibleRadius+fadeWidth,blockers,~(1<<2),QueryTriggerInteraction.Ignore);
+   for(int i=0;i<hits&&count<blockerMatrices.Length;i++)if(blockers[i] is BoxCollider box && box.enabled && BlocksReveal(box))
    {blockerMatrices[count++]=Matrix4x4.Scale(new Vector3(1/box.size.x,1/box.size.y,1/box.size.z))*Matrix4x4.Translate(-box.center)*box.transform.worldToLocalMatrix;}
    cmd.SetGlobalInt("_AnimalBlockerCount",count);cmd.SetGlobalMatrixArray("_AnimalBlockers",blockerMatrices);
    context.ExecuteCommandBuffer(cmd);CommandBufferPool.Release(cmd);   camera.clearFlags=CameraClearFlags.SolidColor;camera.backgroundColor=DeveloperLights?new Color(0.25f,0.35f,0.5f):Color.black;
   }
   private void AfterCamera(ScriptableRenderContext context,Camera camera){var cmd=CommandBufferPool.Get("End animal view");cmd.SetGlobalFloat("_AnimalVisionEnabled",0);context.ExecuteCommandBuffer(cmd);CommandBufferPool.Release(cmd);}
-  private void OnDisable(){RenderPipelineManager.beginCameraRendering-=BeforeCamera;RenderPipelineManager.endCameraRendering-=AfterCamera;Shader.SetGlobalFloat("_AnimalVisionEnabled",0);DeveloperLights=false;FoxNightVision=true;if(daylight!=null)daylight.enabled=false;}
+  private void OnDisable(){RenderPipelineManager.beginCameraRendering-=BeforeCamera;RenderPipelineManager.endCameraRendering-=AfterCamera;Shader.SetGlobalFloat("_AnimalVisionEnabled",0);DeveloperLights=false;FoxNightVision=true;if(daylight!=null)daylight.enabled=false;foreach(var pair in originalShadowModes)if(pair.Key!=null)pair.Key.shadows=pair.Value;ApplyNightFeaturePolicy(true);}
   private void OnDestroy(){foreach(var m in copies.Values)Destroy(m);if(ui!=null)Destroy(ui);}
  }
 }
-
-
-
-

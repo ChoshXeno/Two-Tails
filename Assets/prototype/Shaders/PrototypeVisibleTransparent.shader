@@ -29,9 +29,10 @@ Shader "Two Tails/Prototype Visible Transparent"
  {
   float v=AnimalVisibility(i.world);float l=AnimalLocalLight(i.world,i.p);
   half alpha=_BaseColor.a*(_IsText>.5?SAMPLE_TEXTURE2D(_MainTex,sampler_MainTex,i.uv).a*i.color.a:1);
-  if(_AnimalVisionEnabled>.5&&v<=0&&l<=.00001)return 0;
+  float reveal=AnimalCombinedReveal(v,l);
+  if(_AnimalVisionEnabled>.5&&reveal<=.00001)return 0;
   half3 color=_BaseColor.rgb*(_IsText>.5?i.color.rgb:half3(.25,.25,.25)+l);
-  return half4(AnimalFinish(color,v,l),alpha*saturate(v+l));
+  return half4(AnimalFinish(color,v,l),alpha*saturate(reveal));
  }
  ENDHLSL
  }

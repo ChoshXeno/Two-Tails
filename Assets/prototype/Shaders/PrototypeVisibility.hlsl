@@ -3,6 +3,7 @@
 float4 _AnimalVision;
 float3 _AnimalPosition;
 float _AnimalVisionEnabled;
+float _AnimalLightFadeWidth;
 half4 _AnimalNightTint;
 float4 _AnimalFox; // enabled, brightness, gamma, developer daylight
 int _AnimalBlockerCount;
@@ -38,11 +39,17 @@ float AnimalLocalLight(float3 positionWS,float4 positionCS)
 }
 half3 AnimalFinish(half3 lit,float visible,float localLight)
 {
+ float lightReveal=smoothstep(0,max(_AnimalLightFadeWidth,.001),saturate(localLight));
+ float combinedReveal=max(visible,lightReveal);
  // Multiplication after PBR also removes reflection-probe/specular leakage at exactly zero visibility.
- if(_AnimalVisionEnabled>.5&&visible<=0&&localLight<=.00001)return 0;
- if(_AnimalVisionEnabled>.5)lit*=saturate(visible+localLight);
+ if(_AnimalVisionEnabled>.5&&combinedReveal<=.00001)return 0;
+ if(_AnimalVisionEnabled>.5)lit*=saturate(combinedReveal);
  if(_AnimalFox.x>.5)lit=pow(max(lit*_AnimalFox.y,0),1/max(_AnimalFox.z,.1));
  return lit;
+}
+float AnimalCombinedReveal(float visible,float localLight)
+{
+ return max(visible,smoothstep(0,max(_AnimalLightFadeWidth,.001),saturate(localLight)));
 }
 #endif
 

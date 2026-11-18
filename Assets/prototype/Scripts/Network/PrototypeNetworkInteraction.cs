@@ -66,12 +66,13 @@ namespace TwoTails.Prototype
                 UseLeverRpc(target.NetworkObject);
         }
 
-        public void RequestMechanic(int target){if(IsOwner&&IsSpawned)UseMechanicRpc(target);}
+        public void RequestMechanic(int target){if(IsOwner&&IsSpawned&&AnimalMechanicsWorld.Instance!=null)UseMechanicRpc(target,AnimalMechanicsWorld.Instance.State.Revision);}
         [Rpc(SendTo.Server,InvokePermission=RpcInvokePermission.Owner)]
-        private void UseMechanicRpc(int target,RpcParams rpc=default)
+        private void UseMechanicRpc(int target,int revision,RpcParams rpc=default)
         {
             if(!IsServer||rpc.Receive.SenderClientId!=OwnerClientId||!NetworkPuzzleOccupancy.IsCurrentPlayer(NetworkManager,player))return;
             var world=AnimalMechanicsWorld.Instance;if(world==null)return;
+            if (revision != world.State.Revision) { MechanicFeedbackRpc("Target changed. Try again."); return; }
             world.TryUse(GetComponent<AnimalMechanicsActor>(),target,out string message);MechanicFeedbackRpc(message);
         }
         [Rpc(SendTo.Owner,InvokePermission=RpcInvokePermission.Server)]
@@ -103,5 +104,3 @@ namespace TwoTails.Prototype
         }
     }
 }
-
-

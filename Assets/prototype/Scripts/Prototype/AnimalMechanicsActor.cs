@@ -17,13 +17,44 @@ namespace TwoTails.Prototype
   {
    get{if(Time.unscaledTime<feedbackUntil)return feedback;var world=AnimalMechanicsWorld.Instance;if(world==null)return "";int id=world.FindTarget(this);return id<0?"":world.Prompt(this,id);}
   }
+  public bool IsBeaver => GetComponent<PrototypeAnimal>().Species == PrototypeSpecies.Beaver;
+  public bool HasPickupTarget
+  {
+   get
+   {
+    var world = AnimalMechanicsWorld.Instance;
+    return IsBeaver && world != null && world.IsPickup(world.FindTarget(this));
+   }
+  }
+
+  public bool GetBuildStatus(out string reason)
+  {
+   reason = null;
+   return AnimalMechanicsWorld.Instance != null &&
+          AnimalMechanicsWorld.Instance.GetBuildStatus(this, out reason);
+  }
+
+  public void RequestBuild()
+  {
+   if (!GetBuildStatus(out string reason)) return;
+   if (reason != null) { Feedback(reason); return; }
+   Dispatch(AnimalMechanicsWorld.BuildTarget);
+  }
+
   public bool TryRequest()
   {
    var world=AnimalMechanicsWorld.Instance;if(world==null)return false;int id=world.FindTarget(this);if(id<0)return false;
    if(Locked){Feedback("Please wait");return true;}
+   Dispatch(id);
+   return true;
+  }
+
+  private void Dispatch(int id)
+  {
+   var world = AnimalMechanicsWorld.Instance;
+   if (world == null) return;
    if(TryGetComponent<NetworkPlayerPrototype>(out var n)&&n.IsSpawned){if(n.IsOwner)GetComponent<PrototypeNetworkInteraction>().RequestMechanic(id);}
    else {world.TryUse(this,id,out string message);Feedback(message);}
-   return true;
   }
   public void Transition(Vector3 position)
   {
