@@ -12,6 +12,7 @@ namespace TwoTails.Prototype
         public Vector3 PositionC, PositionD;
         public double BusyC, BusyD;
         public float HeavyOffset;
+        public float HeavyDrop;
         public bool BoardBroken;
         public Vector3 PositionA, PositionB;
         public int Picked, Revision;
@@ -72,6 +73,7 @@ namespace TwoTails.Prototype
             serializer.SerializeValue(ref BusyC);
             serializer.SerializeValue(ref BusyD);
             serializer.SerializeValue(ref HeavyOffset);
+            serializer.SerializeValue(ref HeavyDrop);
             serializer.SerializeValue(ref BoardBroken);
             serializer.SerializeValue(ref SpeciesA);
             serializer.SerializeValue(ref SpeciesB);
@@ -88,7 +90,7 @@ namespace TwoTails.Prototype
         public bool Equals(AnimalMechanicsState other) =>
             SpeciesC == other.SpeciesC && SpeciesD == other.SpeciesD &&
             PositionC == other.PositionC && PositionD == other.PositionD && BusyC == other.BusyC && BusyD == other.BusyD &&
-            HeavyOffset == other.HeavyOffset && BoardBroken == other.BoardBroken && SpeciesA == other.SpeciesA && SpeciesB == other.SpeciesB &&
+            HeavyOffset == other.HeavyOffset && HeavyDrop == other.HeavyDrop && BoardBroken == other.BoardBroken && SpeciesA == other.SpeciesA && SpeciesB == other.SpeciesB &&
             PositionA == other.PositionA && PositionB == other.PositionB &&
             Picked == other.Picked && Slots == other.Slots && Revision == other.Revision &&
             WaterLevel == other.WaterLevel && BusyA == other.BusyA && BusyB == other.BusyB;

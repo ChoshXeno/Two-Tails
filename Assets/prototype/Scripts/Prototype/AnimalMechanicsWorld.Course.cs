@@ -8,7 +8,10 @@ namespace TwoTails.Prototype
         public const int StrikeTarget = 31;
         [SerializeField, Min(.1f), Tooltip("Speed of the marked heavy block along its guide, in metres per second.")]
         private float heavyPushSpeed = 1.5f;
-        private const float HeavyTravel = 1.5f;
+        [SerializeField, Tooltip("Height below which the guided gap block returns to its own starting pose.")]
+        private float heavyFallHeight = -5f;
+        [SerializeField, Min(0f), Tooltip("Delay before the guided gap block respawns after falling.")]
+        private float heavyRespawnDelay = .8f;
         [SerializeField] private Transform savedRabbit, savedElephant, savedStrikeBoard;
         [SerializeField] private Renderer savedRabbitVisual, savedElephantVisual;
         [SerializeField] private BoxCollider savedHeavyBlock;
@@ -17,6 +20,9 @@ namespace TwoTails.Prototype
         private Vector3 heavyStart, startC, startD;
         private AnimalMechanicsActor pushActor;
         private double pushUntil, nextPushRequest;
+        private float heavyVerticalVelocity;
+        private double heavyFellAt = -1;
+        private int pushSign;
         private Material courseBlue;
 
         private static PrototypeSpecies DisplaySpecies(AnimalMechanicsState s, int i) =>
@@ -193,55 +199,97 @@ namespace TwoTails.Prototype
 
         private void ApplyCourseState()
         {
-            heavyBlock.transform.position = heavyStart - Vector3.right * State.HeavyOffset;
+            heavyBlock.transform.position = heavyStart - Vector3.right * State.HeavyOffset + Vector3.up * State.HeavyDrop;
             strikeBoard.gameObject.SetActive(!State.BoardBroken);
         }
 
         internal void RequestHeavyPush(PrototypeMotor motor, Vector3 direction)
         {
-            if (heavyBlock == null || direction.x >= -.65f || Now < nextPushRequest ||
+            if (heavyBlock == null || Mathf.Abs(direction.x) < .65f || Now < nextPushRequest ||
                 motor.GetComponent<PrototypeAnimal>()?.Species != PrototypeSpecies.Elephant) return;
             var actor = motor.GetComponent<AnimalMechanicsActor>();
-            if (!NearHeavyFace(actor)) return;
+            if (!NearHeavyFace(actor, direction.x < 0 ? 1 : -1)) return;
             nextPushRequest = Now + .06;
-            if (Authority) AcceptHeavyPush(actor);
+            if (Authority) AcceptHeavyPush(actor, direction.x < 0 ? 1 : -1);
             else actor.GetComponent<PrototypeNetworkInteraction>()?.RequestHeavyPush();
         }
 
-        private bool NearHeavyFace(AnimalMechanicsActor actor)
+        private bool NearHeavyFace(AnimalMechanicsActor actor, int side)
         {
             if (actor == null) return false;
             var p = actor.transform.position;
             var bounds = heavyBlock.bounds;
-            return p.x >= bounds.max.x && p.x <= bounds.max.x + .62f &&
+            return (side > 0 ? p.x >= bounds.max.x && p.x <= bounds.max.x + .62f :
+                    p.x <= bounds.min.x && p.x >= bounds.min.x - .62f) &&
                    p.y < bounds.max.y + .20f && p.y + 1.8f > bounds.min.y &&
                    Mathf.Abs(p.z - bounds.center.z) <= bounds.extents.z + .1f;
         }
 
         internal void AcceptHeavyPush(AnimalMechanicsActor actor)
         {
-            if (!Authority || !Valid(actor) || actor.Locked || !NearHeavyFace(actor) ||
+            int side = actor.transform.position.x > heavyBlock.bounds.center.x ? 1 : -1;
+            AcceptHeavyPush(actor, side);
+        }
+
+        private void AcceptHeavyPush(AnimalMechanicsActor actor, int side)
+        {
+            if (!Authority || !Valid(actor) || actor.Locked || !NearHeavyFace(actor, side) ||
                 actor.GetComponent<PrototypeAnimal>().Species != PrototypeSpecies.Elephant ||
-                Vector3.Dot(actor.GetComponent<PrototypeMotor>().Facing.forward, Vector3.left) < .65f) return;
+                Vector3.Dot(actor.GetComponent<PrototypeMotor>().Facing.forward, side > 0 ? Vector3.left : Vector3.right) < .65f) return;
             pushActor = actor;
+            pushSign = side;
             pushUntil = Now + .16;
         }
 
         private void StepHeavyPush()
         {
-            if (Now >= pushUntil || !Valid(pushActor) || pushActor.Locked || !NearHeavyFace(pushActor) ||
+            if (Now >= pushUntil || !Valid(pushActor) || pushActor.Locked || !NearHeavyFace(pushActor, pushSign) ||
                 pushActor.GetComponent<PrototypeAnimal>().Species != PrototypeSpecies.Elephant) return;
-            float step = Mathf.Min(HeavyTravel - State.HeavyOffset, heavyPushSpeed * Time.fixedDeltaTime);
-            if (step <= 0) return;
+            float step = heavyPushSpeed * Time.fixedDeltaTime * pushSign;
+            if (State.HeavyOffset + step < 0f) step = -State.HeavyOffset;
+            if (Mathf.Abs(step) < .0001f) return;
             Physics.SyncTransforms();
             var bounds = heavyBlock.bounds;
             Vector3 half = bounds.extents - Vector3.one * .015f;
-            half.x += step * .5f;
+            half.x += Mathf.Abs(step) * .5f;
             foreach (var collider in Physics.OverlapBox(bounds.center - Vector3.right * (step * .5f),
                          half, Quaternion.identity, ~0, QueryTriggerInteraction.Ignore))
                 if (collider != heavyBlock) return;
             var next = State;
             next.HeavyOffset += step;
+            State = next;
+            ApplyCourseState();
+            Publish();
+        }
+
+        private void StepHeavyFall()
+        {
+            if (heavyBlock == null) return;
+            var next = State;
+            var bounds = heavyBlock.bounds;
+            bool supported = Physics.Raycast(
+                new Vector3(bounds.center.x, bounds.min.y + .05f, bounds.center.z),
+                Vector3.down, out var support, .12f, ~0, QueryTriggerInteraction.Ignore) &&
+                support.collider != heavyBlock;
+            if (supported && next.HeavyDrop >= 0f)
+            {
+                heavyVerticalVelocity = 0f;
+                return;
+            }
+            heavyVerticalVelocity += Physics.gravity.y * Time.fixedDeltaTime;
+            next.HeavyDrop += heavyVerticalVelocity * Time.fixedDeltaTime;
+            if (heavyStart.y + next.HeavyDrop < heavyFallHeight)
+            {
+                if (heavyFellAt < 0) heavyFellAt = Now;
+                if (Now - heavyFellAt >= heavyRespawnDelay)
+                {
+                    next.HeavyOffset = 0f;
+                    next.HeavyDrop = 0f;
+                    heavyVerticalVelocity = 0f;
+                    heavyFellAt = -1;
+                    pushActor = null;
+                }
+            }
             State = next;
             ApplyCourseState();
             Publish();

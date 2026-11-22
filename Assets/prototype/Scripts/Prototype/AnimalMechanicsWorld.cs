@@ -57,7 +57,7 @@ namespace TwoTails.Prototype
    night = GetComponentInParent<PrototypeNightEnvironment>() ?? FindAnyObjectByType<PrototypeNightEnvironment>();
    outlineMesh = DamSlotPresentation.CreateBoxOutline();
    outlineMaterial = new Material(damMarker.sharedMaterial) { name = "Dam slot outline" };
-   outlineMaterial.SetColor("_BaseColor", new Color(1f, .77f, .36f, 1f));
+   outlineMaterial.SetColor("_BaseColor", Color.white);
    damMarker.gameObject.SetActive(false);
    var configured = new List<DamSlotPresentation>();
    for (int index = 0; index < installedLogs.Length && configured.Count < AnimalMechanicsState.SlotLimit; index++)
@@ -246,7 +246,7 @@ namespace TwoTails.Prototype
   public void ReturnLogs(int bits){if(!Authority)return;var s=State;if(bits==0)return;s.Picked&=~bits;s.Revision++;Apply(s);Publish();}
   public void ResetTest()
   {
-   if(!Authority)return;var next=State;next.Picked=0;next.Slots=0;next.HeavyOffset=0;next.BoardBroken=false;pushActor=null;next.WaterLevel=reservoir.InitialLevel;next.Revision++;cooldowns.Clear();
+   if(!Authority)return;var next=State;next.Picked=0;next.Slots=0;next.HeavyOffset=0;next.HeavyDrop=0;next.BoardBroken=false;pushActor=null;heavyVerticalVelocity=0;heavyFellAt=-1;next.WaterLevel=reservoir.InitialLevel;next.Revision++;cooldowns.Clear();
    int index=0;foreach(var actor in FindObjectsByType<AnimalMechanicsActor>())if(Valid(actor))
    {actor.SetHeldLogs(0);Vector3 safe=new Vector3(-1.5f+3*index++,.1f,-4);if(networked)actor.GetComponent<NetworkPlayerPrototype>().Exchange(actor.GetComponent<PrototypeAnimal>().Species,safe);else actor.Transition(safe);}
    Apply(next);Publish();
@@ -255,6 +255,7 @@ namespace TwoTails.Prototype
   {
    if (!Authority) return;
    StepHeavyPush();
+   StepHeavyFall();
    if (State.WaterLevel == WaterTarget) return;
    var next = State;
    next.WaterLevel = Mathf.MoveTowards(next.WaterLevel, WaterTarget, riseSpeed * Time.fixedDeltaTime);

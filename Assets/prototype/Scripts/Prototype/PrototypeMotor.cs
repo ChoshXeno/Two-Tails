@@ -57,7 +57,11 @@ namespace TwoTails.Prototype
         public float VerticalSpeed => verticalSpeed;
         public void RequestJump() { if(controller!=null && (rabbit ? jumpsUsed < 2 : controller.isGrounded) && !IsClimbing && GetComponent<PrototypeSwimmer>()?.IsSwimming!=true) jumpPending=true; }
         public void ClearPendingInput() { jumpPending=false; moveInput=Vector2.zero; GetComponent<PrototypeSwimmer>()?.ClearInput(); }
-        private void OnControllerColliderHit(ControllerColliderHit hit){if(hit.collider.TryGetComponent<CooperativeWeightBox>(out var box))box.Push(this);}
+        private void OnControllerColliderHit(ControllerColliderHit hit)
+        {
+            if (hit.collider.TryGetComponent<CooperativeWeightBox>(out var box)) box.Push(this);
+            if (hit.collider.TryGetComponent<ElephantFreePushBlock>(out var freeBlock)) freeBlock.TryPush(this, hit.moveDirection);
+        }
         public void Warp(Vector3 position){GetComponent<PrototypeSwimmer>()?.ResetState();ClearPendingInput();climbing=null;verticalSpeed=0;jumpsUsed=0;controller.enabled=false;transform.position=position;controller.enabled=true;}
         public void Ride(Vector3 delta){if(enabled&&controller.enabled&&!IsClimbing&&verticalSpeed<=0)controller.Move(delta);}
         public void ResetToSpawn()

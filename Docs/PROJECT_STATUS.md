@@ -1,6 +1,6 @@
 # Two Tails project status
 
-Last updated November 19, 2026 (Malaysia time).
+Last updated November 22, 2026 (Malaysia time).
 
 ## Goals and development environment
 
@@ -165,3 +165,11 @@ Both prototype scenes now contain the two display objects and the course in Edit
 The local historical Editor log records PrototypeNetworkPuzzleHud.Update (old line 32), AnimalMechanicsActor.HasStrikeTarget (21), AnimalMechanicsWorld.FindTarget (121), then Component.transform on a destroyed actor. The HUD now clears its player bindings when there is no spawned local player and when disabled, and respects Unity destroyed-object checks. The exact historical trigger sequence was not reproduced.
 
 Verified through the live Editor: saved and reopened both scenes and found all three children. In SplitScreen Play Mode there was exactly one of each; invoked Reset and requested exit. The Pipeline connection dropped during the subsequent online verification attempt. Online Host/Client, full animal gameplay checks and repeated exception regression remain pending.
+
+## Elephant free push follow-up — 2026-11-19
+
+Implemented a separately authored free push test block in both prototype scenes. The guided gap block remains available. The new kinematic Rigidbody and BoxCollider allow Elephant-only movement with an individual delayed fall respawn. Dam slot outlines now render white. Unity script compile succeeded with no errors and Edit Mode checks found one test block in each scene. Physical play and online synchronization are pending. Details and Inspector settings are in Docs/Animal_Mechanics.md.
+
+## Elephant push corrections — 2026-11-22
+
+Implemented bidirectional gap-block pushes, actual support sensing, falling and individual respawn in the authoritative Animal Mechanics snapshot. Replaced the free block's flush-ground SweepTest support probe with a downward ground ray. Unity scripts compiled with zero errors. Physics acceptance and Host/Client synchronization remain unverified. See Docs/Animal_Mechanics.md for root causes and parameters.
