@@ -40,6 +40,7 @@ namespace TwoTails.Prototype
         {
             hasFocus = Application.isFocused;
             interact.performed += OnInteract;
+            interact.canceled += OnInteractReleased;
             if(jump!=null) jump.performed+=OnJump;
             if (surface != null) surface.performed += OnAuxiliary;
             gameplay.Enable();
@@ -48,6 +49,7 @@ namespace TwoTails.Prototype
         private void OnDisable()
         {
             interact.performed -= OnInteract;
+            interact.canceled -= OnInteractReleased;
             if(jump!=null) jump.performed-=OnJump;
             if (surface != null) surface.performed -= OnAuxiliary;
             gameplay.Disable();
@@ -105,11 +107,14 @@ namespace TwoTails.Prototype
             if (!hasFocus || paused || EditingText || motor.IsOnRope)
                 return;
 
+            if(motor.TryGrip())return;
             if(GetComponent<AnimalMechanicsActor>()?.TryRequest()==true)return;
             if (interactor != null)
                 interactor.TryInteract();
             InteractionPressed?.Invoke();
         }
+
+        private void OnInteractReleased(InputAction.CallbackContext context) => motor.ReleaseGrip();
 
         private void OnApplicationPause(bool value)
         {

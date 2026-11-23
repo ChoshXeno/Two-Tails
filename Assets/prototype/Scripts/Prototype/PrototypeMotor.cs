@@ -58,7 +58,40 @@ namespace TwoTails.Prototype
         private void LateUpdate() { if(TryGetComponent<PrototypeAnimal>(out var animal)) animal.ApplyMotion(Motion); }
         public float VerticalSpeed => verticalSpeed;
         public void RequestJump() { if(IsOnRope || IsClimbing || (controller!=null && (rabbit ? jumpsUsed < 2 : controller.isGrounded) && GetComponent<PrototypeSwimmer>()?.IsSwimming!=true)) jumpPending=true; }
-        public void ClearPendingInput() { jumpPending=false; moveInput=Vector2.zero; ropeClimb=0f; GetComponent<PrototypeSwimmer>()?.ClearInput(); }
+        public void ClearPendingInput() { ReleaseGrip(); jumpPending=false; moveInput=Vector2.zero; ropeClimb=0f; GetComponent<PrototypeSwimmer>()?.ClearInput(); }
+
+        private PrototypeGripBlock grip;
+        private Vector3 gripOffset;
+        private float nextGripSend;
+        internal float GripSpeed => speed;
+        public bool IsGripping => grip != null;
+        public Vector3 GripPoint => grip != null ? grip.GetComponent<BoxCollider>().ClosestPoint(transform.position + Vector3.up) : transform.position;
+
+        internal bool TryGrip()
+        {
+            if (IsGripping) return true;
+            if (IsClimbing || IsOnRope || !controller.isGrounded) return false;
+            float nearest = float.PositiveInfinity;
+            foreach (var candidate in FindObjectsByType<PrototypeGripBlock>())
+            {
+                float distance = (candidate.GetComponent<BoxCollider>().ClosestPoint(transform.position + Vector3.up) - transform.position - Vector3.up).sqrMagnitude;
+                if (distance >= nearest || !candidate.CanReach(this, true)) continue;
+                nearest = distance;
+                grip = candidate;
+            }
+            if (grip == null) return false;
+            gripOffset = transform.position - grip.transform.position;
+            jumpPending = false;
+            nextGripSend = 0;
+            grip.Submit(this, true, Vector3.zero);
+            return true;
+        }
+
+        internal void ReleaseGrip()
+        {
+            if (grip != null) grip.Submit(this, false, Vector3.zero);
+            grip = null;
+        }
         private void OnControllerColliderHit(ControllerColliderHit hit)
         {
             if (hit.collider.TryGetComponent<CooperativeWeightBox>(out var box)) box.Push(this);
@@ -251,6 +284,22 @@ namespace TwoTails.Prototype
                 forward = Vector3.forward;
             Vector3 right = Vector3.Cross(Vector3.up, forward);
             Vector3 direction = forward * moveInput.y + right * moveInput.x;
+
+            if (grip != null)
+            {
+                if (!grip.CanReach(this, false)) ReleaseGrip();
+                else
+                {
+                    jumpPending = false;
+                    if (Time.unscaledTime >= nextGripSend)
+                    {
+                        grip.Submit(this, true, direction);
+                        nextGripSend = Time.unscaledTime + .035f;
+                    }
+                    controller.Move(Vector3.ProjectOnPlane(grip.transform.position + gripOffset - transform.position, Vector3.up));
+                    return;
+                }
+            }
 
             float deltaTime = Time.deltaTime;
             if(GetComponent<PrototypeSwimmer>()?.Move(direction,deltaTime,controller)==true){jumpPending=false;climbing=null;verticalSpeed=0;if(visual!=null&&direction.sqrMagnitude>.0001f)visual.rotation=Quaternion.RotateTowards(visual.rotation,Quaternion.LookRotation(direction),turnSpeed*deltaTime);return;}

@@ -15,12 +15,41 @@ namespace TwoTails.Prototype
         private UnityEngine.UI.Text interactLabel;
         private AnimalMechanicsActor actor;
         private PrototypeScreenButton ropeUp;
+        private PrototypeMotor touchGrip;
+        private int? touchPointer;
+        private bool gripConsumedClick;
         private void Awake()
         {
             interactLabel = interact.GetComponentInChildren<UnityEngine.UI.Text>(true);
             ropeUp = interact.gameObject.AddComponent<PrototypeScreenButton>();
             ropeUp.enabled = false;
             ropeUp.controlPath = "<Gamepad>/buttonSouth";
+            var trigger = interact.gameObject.AddComponent<UnityEngine.EventSystems.EventTrigger>();
+            var down = new UnityEngine.EventSystems.EventTrigger.Entry
+                { eventID = UnityEngine.EventSystems.EventTriggerType.PointerDown };
+            down.callback.AddListener(data =>
+            {
+                if (touchPointer.HasValue) return;
+                gripConsumedClick = current != null && current.Motor.TryGrip();
+                if (!gripConsumedClick) return;
+                touchGrip = current.Motor;
+                touchPointer = ((UnityEngine.EventSystems.PointerEventData)data).pointerId;
+            });
+            var up = new UnityEngine.EventSystems.EventTrigger.Entry
+                { eventID = UnityEngine.EventSystems.EventTriggerType.PointerUp };
+            up.callback.AddListener(data =>
+            {
+                if (touchPointer == ((UnityEngine.EventSystems.PointerEventData)data).pointerId) ReleaseTouchGrip();
+            });
+            trigger.triggers.Add(down);
+            trigger.triggers.Add(up);
+        }
+
+        private void ReleaseTouchGrip()
+        {
+            if (touchGrip != null) touchGrip.ReleaseGrip();
+            touchGrip = null;
+            touchPointer = null;
         }
 
         private void OnEnable() => interact.onClick.AddListener(Press);
@@ -32,6 +61,7 @@ namespace TwoTails.Prototype
 
         private void ClearPlayer()
         {
+            ReleaseTouchGrip();
             current = null;
             interaction = null;
             actor = null;
@@ -62,6 +92,7 @@ namespace TwoTails.Prototype
 
         private void Press()
         {
+            if (gripConsumedClick) { gripConsumedClick = false; return; }
             if (interaction != null && current != null && !current.Motor.IsOnRope)
                 interaction.Request();
         }
