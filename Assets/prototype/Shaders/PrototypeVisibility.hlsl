@@ -48,9 +48,5 @@ half3 AnimalFinish(half3 lit,float visible,float localLight)
  if(_AnimalFox.x>.5)lit=pow(max(lit*_AnimalFox.y,0),1/max(_AnimalFox.z,.1));
  return lit;
 }
-float AnimalCombinedReveal(float visible,float localLight)
-{
- return max(visible,smoothstep(0,max(_AnimalLightFadeWidth,.001),saturate(localLight)));
-}
 #endif
 
