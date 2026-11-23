@@ -51,7 +51,7 @@ Shader "Two Tails/Prototype Animal Vision"
      // the visibility threshold; real scene-light shadows are suppressed at night.
      half3 fill=surface.albedo*_AnimalNightTint.rgb*_AnimalVision.z*hemi*visibility;
      float lightReveal=smoothstep(0,max(_AnimalLightFadeWidth,.001),saturate(localLight));
-     lit.rgb=lit.rgb*lightReveal+fill;
+     lit.rgb=lit.rgb*max(visibility,lightReveal)+fill;
     }
     else lit.rgb=AnimalFinish(lit.rgb,visibility,localLight);
     return lit;

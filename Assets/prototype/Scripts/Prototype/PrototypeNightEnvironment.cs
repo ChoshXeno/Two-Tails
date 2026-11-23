@@ -48,6 +48,9 @@ namespace TwoTails.Prototype
   private void OnEnable(){RenderPipelineManager.beginCameraRendering+=BeforeCamera;RenderPipelineManager.endCameraRendering+=AfterCamera;}
   private void Start()
   {
+   foreach(var light in FindObjectsByType<Light>())
+    if((light.type==LightType.Point||light.type==LightType.Spot)&&light.GetComponent<PrototypeGuideLight>()==null)
+     light.gameObject.AddComponent<PrototypeGuideLight>();
    foreach(var renderer in FindObjectsByType<MeshRenderer>())Prepare(renderer);
    if(Application.isEditor||Debug.isDebugBuild)
    {

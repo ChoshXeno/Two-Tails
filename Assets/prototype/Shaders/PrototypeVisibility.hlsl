@@ -11,7 +11,8 @@ float4x4 _AnimalBlockers[64];
 float AnimalVisibility(float3 positionWS)
 {
  if(_AnimalVisionEnabled<.5)return 1;
- if(_AnimalVision.w>.5)return 1;
+ // Both flags are assigned for the camera currently rendering, never the other viewport.
+ if(_AnimalFox.w>.5 || _AnimalFox.x>.5)return 1;
  float v=1-smoothstep(_AnimalVision.x,_AnimalVision.x+max(_AnimalVision.y,.01),distance(positionWS,_AnimalPosition));
  if(v<=0)return 0;
  float3 origin=_AnimalPosition+float3(0,1,0);
@@ -35,8 +36,6 @@ float AnimalLocalLight(float3 positionWS,float4 positionCS)
   Light l=GetAdditionalLight(lightIndex,positionWS,half4(1,1,1,1));
   amount+=max(l.color.r,max(l.color.g,l.color.b))*l.distanceAttenuation*l.shadowAttenuation;
  LIGHT_LOOP_END
- Light moon=GetMainLight(TransformWorldToShadowCoord(positionWS));
- amount+=max(moon.color.r,max(moon.color.g,moon.color.b))*moon.shadowAttenuation;
  return saturate(amount);
 }
 half3 AnimalFinish(half3 lit,float visible,float localLight)
