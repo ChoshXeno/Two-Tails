@@ -86,7 +86,7 @@ namespace TwoTails.Prototype
    }
    damLabel.text = Progress == RequiredLogs ? "Dam complete" : $"Dam ({Progress}/{RequiredLogs})";
   }
-  public void Initialize(){if(!Authority)return;Apply(new AnimalMechanicsState{SpeciesA=(byte)PrototypeSpecies.Otter,SpeciesB=(byte)PrototypeSpecies.Beaver,PositionA=startA,PositionB=startB,SpeciesC=(byte)PrototypeSpecies.Rabbit,SpeciesD=(byte)PrototypeSpecies.Elephant,PositionC=startC,PositionD=startD,WaterLevel=reservoir.InitialLevel});Publish();}
+  public void Initialize(){if(!Authority)return;Apply(new AnimalMechanicsState{SpeciesA=(byte)PrototypeSpecies.Otter,SpeciesB=(byte)PrototypeSpecies.Beaver,PositionA=startA,PositionB=startB,SpeciesC=(byte)PrototypeSpecies.Rabbit,SpeciesD=(byte)PrototypeSpecies.Elephant,SpeciesE=(byte)PrototypeSpecies.Monkey,PositionC=startC,PositionD=startD,PositionE=startE,WaterLevel=reservoir.InitialLevel});Publish();}
   private bool Valid(AnimalMechanicsActor a)=>a!=null&&a.isActiveAndEnabled&&(networked?(NetworkManager.Singleton!=null&&(NetworkManager.Singleton.IsServer?NetworkPuzzleOccupancy.IsCurrentPlayer(NetworkManager.Singleton,a.GetComponent<NetworkPlayerPrototype>()):a.GetComponent<NetworkPlayerPrototype>().IsSpawned&&a.GetComponent<NetworkPlayerPrototype>().IsOwner)):a.GetComponent<PrototypeMotor>().isActiveAndEnabled);
   private const int ExtraLogStart = 60;
   private int LogIndex(int id) => id >= ExtraLogStart ? id - ExtraLogStart + 10 : id >= 10 && id < 20 ? id - 10 : -1;
@@ -189,6 +189,10 @@ namespace TwoTails.Prototype
     if(!lobby.bounds.Contains(from+Vector3.up)||!lobby.bounds.Contains(to+Vector3.up)){message="Swap only in the lobby";return false;}
     if(!Safe(to,actor.transform,displays[id])||!Safe(from,actor.transform,displays[id])){message="Swap position is blocked";return false;}
     var replacement=DisplaySpecies(next,id);
+    if (replacement == species) { message = "Already playing " + species; return false; }
+    foreach (var other in FindObjectsByType<AnimalMechanicsActor>())
+     if (other != actor && Valid(other) && other.GetComponent<PrototypeAnimal>().Species == replacement)
+     { message = replacement + " is in use"; return false; }
     SetDisplay(ref next,id,species,from,Now+swapDuration);
     if(networked)actor.GetComponent<NetworkPlayerPrototype>().Exchange(replacement,to);else{actor.GetComponent<PrototypeAnimal>().Apply(replacement);actor.Transition(to);}
     message="Now playing "+replacement;
@@ -235,9 +239,9 @@ namespace TwoTails.Prototype
   }
   public PrototypeSpecies AvailableSpecies(PrototypeSpecies preferred,NetworkPlayerPrototype joining)
   {
-   // A returning connection must not duplicate an animal currently held by a display or another player.
-   int used=net!=null&&!net.IsSpawned?(1<<(int)PrototypeSpecies.Otter)|(1<<(int)PrototypeSpecies.Beaver):(1<<State.SpeciesA)|(1<<State.SpeciesB);
-   used |= net != null && !net.IsSpawned ? (1 << (int)PrototypeSpecies.Rabbit) | (1 << (int)PrototypeSpecies.Elephant) : (1 << State.SpeciesC) | (1 << State.SpeciesD);
+   // Player identities must be unique. A lobby display can show a species already
+   // controlled by the other player; the server rejects exchanging into it.
+   int used = 0;
    foreach(var player in FindObjectsByType<NetworkPlayerPrototype>())if(player!=joining&&player.IsSpawned)used|=1<<(int)player.GetComponent<PrototypeAnimal>().Species;
    if((used&(1<<(int)preferred))==0)return preferred;
    for(int i=0;i<6;i++)if((used&(1<<i))==0)return (PrototypeSpecies)i;
@@ -274,8 +278,10 @@ namespace TwoTails.Prototype
        previous.SpeciesA == state.SpeciesA && previous.SpeciesB == state.SpeciesB &&
        previous.Picked == state.Picked && previous.Slots == state.Slots &&
        previous.PositionC == state.PositionC && previous.PositionD == state.PositionD &&
-       previous.SpeciesC == state.SpeciesC && previous.SpeciesD == state.SpeciesD) return;
+       previous.SpeciesC == state.SpeciesC && previous.SpeciesD == state.SpeciesD &&
+       previous.PositionE == state.PositionE && previous.SpeciesE == state.SpeciesE) return;
    displays[0].position=state.PositionA;displays[1].position=state.PositionB;displays[2].position=state.PositionC;displays[3].position=state.PositionD;
+   if(displays.Length>4)displays[4].position=state.PositionE;
    for(int i=0;i<displays.Length;i++){displayVisuals[i].GetPropertyBlock(colors);colors.SetColor("_BaseColor",PrototypeAnimal.ColorFor(DisplaySpecies(state,i)));displayVisuals[i].SetPropertyBlock(colors);var text=displays[i].GetComponentInChildren<TextMesh>();text.text=(DisplaySpecies(state,i)).ToString();}
    for(int i=0;i<Mathf.Min(logs.Length, AnimalMechanicsState.LogLimit);i++)if(logs[i]!=null)logs[i].gameObject.SetActive((state.Picked&(1<<i))==0);
    ApplySlots();

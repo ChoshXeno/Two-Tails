@@ -17,6 +17,9 @@ namespace TwoTails.Prototype
 
         private void Awake()
         {
+            var auxiliaryRect = (RectTransform)surface.transform;
+            var jumpRect = jumpLabel.GetComponentInParent<PrototypeScreenButton>(true).GetComponent<RectTransform>();
+            auxiliaryRect.anchoredPosition = new Vector2(-110f, jumpRect.anchoredPosition.y);
             auxiliaryControl = surface.GetComponent<PrototypeScreenButton>();
             auxiliaryLabel = surface.GetComponentInChildren<Text>(true);
             auxiliaryImage = surface.GetComponent<Image>();
@@ -36,12 +39,13 @@ namespace TwoTails.Prototype
             bool swimming = player != null && player.GetComponent<PrototypeSwimmer>()?.IsSwimming == true;
             string reason = null;
             bool building = !swimming && actor != null && actor.GetBuildStatus(out reason);
-            bool available = swimming || (building && reason == null);
+            bool onRope = player != null && player.Motor.IsOnRope;
+            bool available = onRope || swimming || (building && reason == null);
 
-            jumpLabel.text = swimming ? "Dive" : "Jump";
-            surface.SetActive(swimming || building);
+            jumpLabel.text = swimming ? "Surface" : "Jump";
+            surface.SetActive(onRope || swimming || building);
             auxiliaryControl.enabled = available;
-            auxiliaryLabel.text = swimming ? "Surface" : "Build";
+            auxiliaryLabel.text = onRope ? "Down" : swimming ? "Dive" : "Build";
             if (auxiliaryImage != null)
                 auxiliaryImage.color = available ? activeColor : Color.Lerp(activeColor, Color.gray, .65f);
             BeaverInventoryHud.Refresh(inventoryLabel, actor);

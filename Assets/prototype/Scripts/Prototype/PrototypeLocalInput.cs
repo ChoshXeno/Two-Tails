@@ -87,12 +87,14 @@ namespace TwoTails.Prototype
                 return;
             }
 
-            motor.SetMoveInput(input); GetComponent<PrototypeSwimmer>()?.SetInput(jump?.IsPressed()==true,surface?.IsPressed()==true);
+            motor.SetMoveInput(input);
+            motor.SetRopeClimb(interact.IsPressed(), surface?.IsPressed() == true);
+            GetComponent<PrototypeSwimmer>()?.SetInput(surface?.IsPressed() == true, jump?.IsPressed() == true);
         }
 
         private void OnAuxiliary(InputAction.CallbackContext context)
         {
-            if (hasFocus && !paused && !EditingText)
+            if (hasFocus && !paused && !EditingText && !motor.IsOnRope)
                 GetComponent<AnimalMechanicsActor>()?.RequestBuild();
         }
 
@@ -100,7 +102,7 @@ namespace TwoTails.Prototype
 
         private void OnInteract(InputAction.CallbackContext context)
         {
-            if (!hasFocus || paused || EditingText)
+            if (!hasFocus || paused || EditingText || motor.IsOnRope)
                 return;
 
             if(GetComponent<AnimalMechanicsActor>()?.TryRequest()==true)return;

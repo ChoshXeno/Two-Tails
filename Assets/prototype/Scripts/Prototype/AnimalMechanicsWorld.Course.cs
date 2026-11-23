@@ -14,10 +14,12 @@ namespace TwoTails.Prototype
         private float heavyRespawnDelay = .8f;
         [SerializeField] private Transform savedRabbit, savedElephant, savedStrikeBoard;
         [SerializeField] private Renderer savedRabbitVisual, savedElephantVisual;
+        [SerializeField, Tooltip("Editable Monkey Display in the walkable lobby.")] private Transform savedMonkey;
+        [SerializeField] private Renderer savedMonkeyVisual;
         [SerializeField] private BoxCollider savedHeavyBlock;
         private Transform strikeBoard;
         private BoxCollider heavyBlock;
-        private Vector3 heavyStart, startC, startD;
+        private Vector3 heavyStart, startC, startD, startE;
         private AnimalMechanicsActor pushActor;
         private double pushUntil, nextPushRequest;
         private float heavyVerticalVelocity;
@@ -26,10 +28,10 @@ namespace TwoTails.Prototype
         private Material courseBlue;
 
         private static PrototypeSpecies DisplaySpecies(AnimalMechanicsState s, int i) =>
-            (PrototypeSpecies)(i switch { 0 => s.SpeciesA, 1 => s.SpeciesB, 2 => s.SpeciesC, _ => s.SpeciesD });
+            (PrototypeSpecies)(i switch { 0 => s.SpeciesA, 1 => s.SpeciesB, 2 => s.SpeciesC, 3 => s.SpeciesD, _ => s.SpeciesE });
 
         private static double DisplayBusy(AnimalMechanicsState s, int i) =>
-            i switch { 0 => s.BusyA, 1 => s.BusyB, 2 => s.BusyC, _ => s.BusyD };
+            i switch { 0 => s.BusyA, 1 => s.BusyB, 2 => s.BusyC, 3 => s.BusyD, _ => s.BusyE };
 
         private static void SetDisplay(ref AnimalMechanicsState s, int i, PrototypeSpecies species, Vector3 position, double busy)
         {
@@ -39,6 +41,7 @@ namespace TwoTails.Prototype
                 case 1: s.SpeciesB = (byte)species; s.PositionB = position; s.BusyB = busy; break;
                 case 2: s.SpeciesC = (byte)species; s.PositionC = position; s.BusyC = busy; break;
                 case 3: s.SpeciesD = (byte)species; s.PositionD = position; s.BusyD = busy; break;
+                case 4: s.SpeciesE = (byte)species; s.PositionE = position; s.BusyE = busy; break;
             }
         }
 
@@ -46,10 +49,15 @@ namespace TwoTails.Prototype
         {
             if (savedRabbit != null && savedElephant != null && savedHeavyBlock != null && savedStrikeBoard != null)
             {
-                displays = new[] { displays[0], displays[1], savedRabbit, savedElephant };
-                displayVisuals = new[] { displayVisuals[0], displayVisuals[1], savedRabbitVisual, savedElephantVisual };
+                displays = savedMonkey != null && savedMonkeyVisual != null
+                    ? new[] { displays[0], displays[1], savedRabbit, savedElephant, savedMonkey }
+                    : new[] { displays[0], displays[1], savedRabbit, savedElephant };
+                displayVisuals = savedMonkey != null && savedMonkeyVisual != null
+                    ? new[] { displayVisuals[0], displayVisuals[1], savedRabbitVisual, savedElephantVisual, savedMonkeyVisual }
+                    : new[] { displayVisuals[0], displayVisuals[1], savedRabbitVisual, savedElephantVisual };
                 startC = savedRabbit.position;
                 startD = savedElephant.position;
+                if (savedMonkey != null) startE = savedMonkey.position;
                 heavyBlock = savedHeavyBlock;
                 heavyStart = heavyBlock.transform.position;
                 strikeBoard = savedStrikeBoard;
@@ -62,6 +70,21 @@ namespace TwoTails.Prototype
         }
 
 #if UNITY_EDITOR
+        public void ConfigureMonkeyDisplayInEditor()
+        {
+            if (savedMonkey != null && savedMonkeyVisual != null) return;
+            if (transform.Find("Monkey Display") != null)
+                throw new InvalidOperationException("Found an existing unbound Monkey Display.");
+            var source = transform.Find("Otter Display");
+            if (source == null) throw new InvalidOperationException("Otter Display template is missing.");
+            savedMonkey = Instantiate(source, new Vector3(0f, .04f, -3.2f), Quaternion.identity, transform);
+            savedMonkey.name = "Monkey Display";
+            savedMonkeyVisual = savedMonkey.Find("Visual").GetComponent<Renderer>();
+            savedMonkey.GetComponentInChildren<TextMesh>().text = "Monkey";
+            SetDisplayPreview(savedMonkeyVisual, PrototypeSpecies.Monkey);
+            UnityEditor.EditorUtility.SetDirty(this);
+        }
+
         public void ConfigureExtendedCourseInEditor()
         {
             if (savedRabbit != null && savedElephant != null && savedHeavyBlock != null && savedStrikeBoard != null)

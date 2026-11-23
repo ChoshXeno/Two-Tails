@@ -1,6 +1,6 @@
 # Two Tails project status
 
-Last updated November 22, 2026 (Malaysia time).
+Last updated November 23, 2026 (Malaysia time).
 
 ## Goals and development environment
 
@@ -173,3 +173,19 @@ Implemented a separately authored free push test block in both prototype scenes.
 ## Elephant push corrections — 2026-11-22
 
 Implemented bidirectional gap-block pushes, actual support sensing, falling and individual respawn in the authoritative Animal Mechanics snapshot. Replaced the free block's flush-ground SweepTest support probe with a downward ground ray. Unity scripts compiled with zero errors. Physics acceptance and Host/Client synchronization remain unverified. See Docs/Animal_Mechanics.md for root causes and parameters.
+
+## Night reveal barriers — 2026-11-23
+
+The old near reveal classified walls, dividers and named doors and gates by object name. On OnlineTest in Play Mode with Developer Lights off, a ray against the actual Vine Wall hit from one test position and missed from the other, for the same ground point at respective distances 1.20 m and 0.50 m. Both were inside the 3 m clear radius. The old shader returned zero reveal on the hit. The updated environment uses only explicitly assigned puzzle barriers and the observed scene reported zero authored and rendered blockers. Existing camera collision, local light terms, Fox vision and developer toggles retain their code paths. The runtime comparison was a ray and shader input check. Rendered screenshots, camera rotation, two-instance and split-screen visual acceptance remain pending.
+
+## Monkey rope course — 2026-11-23
+
+Implemented Monkey air grab, climbing, pendulum movement and momentum release through the existing local motor. Both saved prototype scenes have a climb rope and a two-rope course with safety floor. Online ropes use server-written swing state. Updated contextual HUD and Otter action order. Unity compile, local species/rope/transfer probes and Direct Host contextual labels were observed. Human route, device input, and independent Client remain pending. See Docs/Animal_Mechanics.md.
+
+## Monkey lobby display — 2026-11-23
+
+Implemented a saved fifth lobby display in both OnlineTest and SplitScreen. The networked animal snapshot now includes its species, position and reservation. The Host keeps player animal identities unique: a solo Fox can exchange for Monkey, while a later joiner is assigned Fox; an exchange into an animal held by the other player is rejected. Unity compilation passed with zero errors, and the saved display and scene references were observed in both scenes. The Play Mode scene loaded with two actors, but the unfocused Editor did not advance beyond frame 2. Host-alone Interact, rope use and two-instance join-order acceptance remain to be tested interactively. See Docs/Animal_Mechanics.md.
+
+## Monkey vine, rope and weak moonlight — 2026-11-23
+
+Implemented horizontal and diagonal vine climbing, scaled wall-edge limits and Jump release; an eight-link rope with a simulated free tail and server-written link snapshot; and a scene-saved weak moonlight plus solid roof test in both Prototype entries. The moon alone retains night shadow maps, and ordinary-animal far visibility uses its shadowed main-light contribution. Unity compilation and saved-scene Missing Script checks passed. Controlled Play Mode component probes observed lateral/diagonal climbing and Jump release, stronger timed rope oscillation than continuous input, transient tail bending and low link-length error. An exposed moon ray was clear while the cave-center ray hit its roof. Direct OnlineTest Host started with one player and all three rope NetworkObjects spawned; no current Console errors appeared. Interactive movement, rendered night views, two-instance Client parity, Windows build and device input remain pending. See Docs/Animal_Mechanics.md.

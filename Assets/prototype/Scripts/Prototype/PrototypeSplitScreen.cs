@@ -60,6 +60,8 @@ namespace TwoTails.Prototype
                     .Configure(viewport, players[i].GetComponent<AnimalMechanicsActor>(), i == 0 ? "Q" : "Right Shift");
                 var text=PrototypeTestMenu.TextAt(viewport,"",new Vector2(0.5f,0.84f),new Vector2(700,80));
                 text.gameObject.AddComponent<PrototypeInteractionPrompt>().Configure(players[i].GetComponent<PrototypeInteractor>(),i==1);
+                var ropeHint = PrototypeTestMenu.TextAt(viewport, "", new Vector2(.5f,.76f), new Vector2(600,50), 22);
+                ropeHint.gameObject.AddComponent<PrototypeRopeHint>().Bind(players[i], i == 0 ? "E / Q / Space" : "0 / Right Shift / Enter");
                 PrototypeTestMenu.TextAt(viewport,i==0?"WASD / E | Drag / Wheel":"Arrows / 0 | Numpad 8 2 4 6 / 9 3",new Vector2(0.5f,0.07f),new Vector2(700,60),22);
             }
         }

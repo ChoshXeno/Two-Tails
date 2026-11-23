@@ -35,6 +35,8 @@ float AnimalLocalLight(float3 positionWS,float4 positionCS)
   Light l=GetAdditionalLight(lightIndex,positionWS,half4(1,1,1,1));
   amount+=max(l.color.r,max(l.color.g,l.color.b))*l.distanceAttenuation*l.shadowAttenuation;
  LIGHT_LOOP_END
+ Light moon=GetMainLight(TransformWorldToShadowCoord(positionWS));
+ amount+=max(moon.color.r,max(moon.color.g,moon.color.b))*moon.shadowAttenuation;
  return saturate(amount);
 }
 half3 AnimalFinish(half3 lit,float visible,float localLight)

@@ -8,9 +8,9 @@ namespace TwoTails.Prototype
     {
         public const int SlotLimit = 16;
         public const int LogLimit = 15;
-        public byte SpeciesA, SpeciesB, SpeciesC, SpeciesD;
-        public Vector3 PositionC, PositionD;
-        public double BusyC, BusyD;
+        public byte SpeciesA, SpeciesB, SpeciesC, SpeciesD, SpeciesE;
+        public Vector3 PositionC, PositionD, PositionE;
+        public double BusyC, BusyD, BusyE;
         public float HeavyOffset;
         public float HeavyDrop;
         public bool BoardBroken;
@@ -68,10 +68,13 @@ namespace TwoTails.Prototype
         {
             serializer.SerializeValue(ref SpeciesC);
             serializer.SerializeValue(ref SpeciesD);
+            serializer.SerializeValue(ref SpeciesE);
             serializer.SerializeValue(ref PositionC);
             serializer.SerializeValue(ref PositionD);
+            serializer.SerializeValue(ref PositionE);
             serializer.SerializeValue(ref BusyC);
             serializer.SerializeValue(ref BusyD);
+            serializer.SerializeValue(ref BusyE);
             serializer.SerializeValue(ref HeavyOffset);
             serializer.SerializeValue(ref HeavyDrop);
             serializer.SerializeValue(ref BoardBroken);
@@ -88,8 +91,8 @@ namespace TwoTails.Prototype
         }
 
         public bool Equals(AnimalMechanicsState other) =>
-            SpeciesC == other.SpeciesC && SpeciesD == other.SpeciesD &&
-            PositionC == other.PositionC && PositionD == other.PositionD && BusyC == other.BusyC && BusyD == other.BusyD &&
+            SpeciesC == other.SpeciesC && SpeciesD == other.SpeciesD && SpeciesE == other.SpeciesE &&
+            PositionC == other.PositionC && PositionD == other.PositionD && PositionE == other.PositionE && BusyC == other.BusyC && BusyD == other.BusyD && BusyE == other.BusyE &&
             HeavyOffset == other.HeavyOffset && HeavyDrop == other.HeavyDrop && BoardBroken == other.BoardBroken && SpeciesA == other.SpeciesA && SpeciesB == other.SpeciesB &&
             PositionA == other.PositionA && PositionB == other.PositionB &&
             Picked == other.Picked && Slots == other.Slots && Revision == other.Revision &&

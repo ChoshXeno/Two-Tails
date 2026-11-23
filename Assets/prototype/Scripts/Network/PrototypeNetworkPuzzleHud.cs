@@ -14,7 +14,14 @@ namespace TwoTails.Prototype
         private NetworkPlayerPrototype current;
         private UnityEngine.UI.Text interactLabel;
         private AnimalMechanicsActor actor;
-        private void Awake() => interactLabel = interact.GetComponentInChildren<UnityEngine.UI.Text>(true);
+        private PrototypeScreenButton ropeUp;
+        private void Awake()
+        {
+            interactLabel = interact.GetComponentInChildren<UnityEngine.UI.Text>(true);
+            ropeUp = interact.gameObject.AddComponent<PrototypeScreenButton>();
+            ropeUp.enabled = false;
+            ropeUp.controlPath = "<Gamepad>/buttonSouth";
+        }
 
         private void OnEnable() => interact.onClick.AddListener(Press);
         private void OnDisable()
@@ -42,8 +49,11 @@ namespace TwoTails.Prototype
                 actor = current != null ? current.GetComponent<AnimalMechanicsActor>() : null;
             }
 
+            bool onRope = current != null && current.Motor.IsOnRope;
+            ropeUp.enabled = onRope;
+            interact.interactable = !onRope;
             interact.gameObject.SetActive(interaction != null);
-            if (interactLabel != null) interactLabel.text = actor != null && actor.HasStrikeTarget ? "Strike" : actor != null && actor.HasPickupTarget ? "Pickup" : "Interact";
+            if (interactLabel != null) interactLabel.text = onRope ? "Up" : actor != null && actor.HasStrikeTarget ? "Strike" : actor != null && actor.HasPickupTarget ? "Pickup" : "Interact";
             if(jump!=null)jump.SetActive(interaction!=null);
             prompt.text = interaction != null ? interaction.GetPrompt() : "";
             if (plateStatus != null)
@@ -52,7 +62,7 @@ namespace TwoTails.Prototype
 
         private void Press()
         {
-            if (interaction != null)
+            if (interaction != null && current != null && !current.Motor.IsOnRope)
                 interaction.Request();
         }
     }
