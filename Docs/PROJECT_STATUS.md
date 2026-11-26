@@ -2,6 +2,17 @@
 
 Last updated November 26, 2026 (Malaysia time).
 
+## Monkey rope grip follow-up — 2026-11-27
+
+Implemented runtime hand targeting while Monkey is on a rope. Previously Vine_Hang_Idle only supplied an authored pose with no continuous rope contact constraint. Presentation now aligns the visual to the rope tangent, moves only the visual so the mean hand position reaches RopeGripPoint, then solves both forelimbs toward adjacent grip points. The solver runs after the animation request in presentation, including climb-to-hang transitions; it stops automatically when IsOnRope clears. Player collision, rope momentum and release mechanics are unchanged. Unity compilation completed with no errors. Rendered swing transitions, palm orientation, collision clearance and Host/Client remain unverified. Next: exercise real grab/climb/swing/release and inspect side views.
+## Elephant torso tuning — 2026-11-27
+
+Updated Run, Interact, Jump_Start, Jump_Air, Jump_Land and Strike in place using AgentScripts/TuneElephantBody.cs. Added model-axis hips/chest/neck rotation and hips translation without scale curves. Run has 3.6 cm authored local heave and small pitch/roll; interaction and kick have weight shift; takeoff/landing have 5.5/6.5 cm local compression. Air stays at fixed height with light chest motion. Original gameplay movement and clip GUIDs retained. Unity authoring executed successfully; rendered gameplay and foot-contact acceptance remain pending. Body curves are rebuilt from rest each pass to avoid accumulating offsets.
+## Elephant first animation pass — 2026-11-27
+
+Implemented independent Elephant visual prefab, Generic Avatar, controller and 13 authored clips under Assets/Art/Finished Animation/Elephant. Only rest exists in Assets/Prefabs/Elephant.fbx; source FBX/importer untouched. Uses existing same-animal Preview_URP material and BakedMaterial.001_baseColor. Shared presentation supports Elephant player and lobby. Motor selects grip hold/step blends and successful local Strike requests the kick cue without delaying board destruction. Build script is AgentScripts/BuildElephant.cs.
+
+Verified: Unity compilation completed without errors. Controlled Play Mode Animator selection returned all 11 requested states with Elephant-only clips, valid Avatar, root motion off and correct non-null Base Map; Push/Pull selected hold clips at zero GripSpeed. This is binding/playback verification, not visual acceptance. The normal runtime player probe did not produce a reliable sequence (species/state changed before follow-up sampling). Lobby exchange, live gait/jump/lever/Strike contact, pushing/pulling against actual boxes, death, skin floor/contact, scarf rendering and independent Host/Client remain unverified. Strike cue currently originates on authority; remote cue parity needs further work. Generated clips are first-pass candidates, not accepted finished animation despite requested delivery directory. Next: preview each pose, calibrate ground/contact, complete real gameplay and network checks before accepting delivery.
 ## Rabbit stable airborne follow-up — 2026-11-27
 
 Restored Rabbit's intended state order: Jump_Start on takeoff, Jump_Air after the short takeoff window, and Jump_Start replayed once for an accepted second jump. Inspection of Rabbit_Jump_Air.anim confirms a 0.36 s rotation-only clip with Loop Time enabled. User specified keeping source frames 2–4 and looping that segment. The Editor is currently unreachable, so the clip has not yet been cropped or seam-checked. Completed follow-up: Unity API froze all 168 curves at source frame 3 (60 fps), holding the selected airborne pose in a 0.6 s loop with no animated vertical motion. GUID retained. Editor connection succeeded outside the sandbox; prior unreachable reports were sandbox-related. Rendered gameplay acceptance remains pending.
@@ -332,5 +343,8 @@ Fox animated FBX is now present with nine clips; no restoration performed. Full 
 Implemented 15 Monkey actions on a copy of its source rig, imported a valid Generic Avatar, added the Animator and routed the Monkey visual through existing local/network species identities. Lobby slots show Monkey Sit while holding Monkey. Finished Animation placeholders are Git-visible. SplitScreen checked Sit, Run/Idle, jump phases, wall hold/climb/top exit and rope hold/climb/swing input. Direct localhost Host used the existing exchange to select Monkey and confirmed its Idle Animator and Base Map. See the animation audit and raw Play Mode notes for scope. Independent Client/Relay, visual contact and loop inspection, and specific Interact/Death/Push/Pull gameplay checks remain pending. No commit or push.
 
 Follow-up probes confirmed transient rope release before regrab and matching sampled start/near-end rotations for all ten looping Unity clips (0.000 degrees at reported precision).
+
+
+
 
 

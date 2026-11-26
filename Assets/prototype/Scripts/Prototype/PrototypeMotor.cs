@@ -118,6 +118,13 @@ namespace TwoTails.Prototype
                     }
                     if (Time.time < interactUntil) return PrototypeMotion.Interact;
                 }
+                if (species == PrototypeSpecies.Elephant)
+                {
+                    if (Time.time < deathUntil) return PrototypeMotion.Death;
+                    if (Time.time < woodUntil) return woodMotion;
+                    if (IsGripping) return gripDirection < -.1f ? PrototypeMotion.Pull : PrototypeMotion.Push;
+                    if (Time.time < interactUntil && controller.isGrounded) return PrototypeMotion.Interact;
+                }
                 if (species == PrototypeSpecies.Beaver)
                 {
                     if (Time.time < deathUntil) return PrototypeMotion.Death;
@@ -202,6 +209,9 @@ namespace TwoTails.Prototype
         private Vector3 ropeMomentum;
         public bool IsOnRope => rope != null && rope.Ready;
         public Vector3 RopeGripPoint => IsOnRope ? rope.Point(ropeDepth) : transform.position + Vector3.up * RopeGripHeight;
+        internal Vector3 RopeGripUp => IsOnRope
+            ? (rope.Point(Mathf.Max(.1f, ropeDepth - .15f)) - rope.Point(Mathf.Min(rope.Length, ropeDepth + .15f))).normalized
+            : Vector3.up;
 
         public void SetRopeClimb(bool up, bool down) => ropeClimb = (up ? 1f : 0f) - (down ? 1f : 0f);
 
@@ -461,6 +471,7 @@ namespace TwoTails.Prototype
         }
     }
 }
+
 
 
 

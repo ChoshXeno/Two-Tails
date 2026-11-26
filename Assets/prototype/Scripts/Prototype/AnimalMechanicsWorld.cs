@@ -200,6 +200,7 @@ namespace TwoTails.Prototype
    else if (id == StrikeTarget)
    {
     next.BoardBroken = true;
+    actor.GetComponent<PrototypeMotor>()?.ShowWoodAction(PrototypeMotion.Strike);
     message = "Board broken";
    }
    else if (IsLog(id))
@@ -295,3 +296,4 @@ namespace TwoTails.Prototype
   }  private void Update(){for(int i=0;i<displays.Length;i++){double remaining=DisplayBusy(State,i)-Now;displayVisuals[i].transform.localScale=Vector3.one*Mathf.Lerp(1,.25f,Mathf.Clamp01((float)(remaining/swapDuration)));}}
  }
 }
+

@@ -10,6 +10,7 @@ namespace TwoTails.Prototype
         private static GameObject otterPrefab;
         private static GameObject beaverPrefab;
         private static GameObject rabbitPrefab;
+        private static GameObject elephantPrefab;
         private PrototypeSpecies modelSpecies;
         private GameObject model;
         private Animator animator;
@@ -34,7 +35,8 @@ namespace TwoTails.Prototype
             bool otter = species == PrototypeSpecies.Otter;
             bool beaver = species == PrototypeSpecies.Beaver;
             bool rabbit = species == PrototypeSpecies.Rabbit;
-            bool supported = monkey || fox || otter || beaver || rabbit;
+            bool elephant = species == PrototypeSpecies.Elephant;
+            bool supported = monkey || fox || otter || beaver || rabbit || elephant;
             var visual = owner.GetComponent<MonkeyPresentation>();
             if (visual == null)
             {
@@ -58,7 +60,8 @@ namespace TwoTails.Prototype
                 if (otter && otterPrefab == null) otterPrefab = Resources.Load<GameObject>("TwoTailsOtterVisual");
                 if (beaver && beaverPrefab == null) beaverPrefab = Resources.Load<GameObject>("TwoTailsBeaverVisual");
                 if (rabbit && rabbitPrefab == null) rabbitPrefab = Resources.Load<GameObject>("TwoTailsRabbitVisual");
-                var selectedPrefab = monkey ? prefab : fox ? foxPrefab : otter ? otterPrefab : beaver ? beaverPrefab : rabbitPrefab;
+                if (elephant && elephantPrefab == null) elephantPrefab = Resources.Load<GameObject>("TwoTailsElephantVisual");
+                var selectedPrefab = elephant ? elephantPrefab : monkey ? prefab : fox ? foxPrefab : otter ? otterPrefab : beaver ? beaverPrefab : rabbitPrefab;
                 if (selectedPrefab == null)
                 {
                     if (placeholder != null) placeholder.enabled = true;
@@ -146,9 +149,30 @@ namespace TwoTails.Prototype
                 visual.UpdateMovementVisual(owner.transform.position, mount, motion, otter, movement.GrippedBlock);
             if (!wasActive) { visual.current = null; visual.releaseAt = 0f; }
             visual.Play(lobby ? "Sit" : motion.ToString());
+            if (!lobby && monkey && owner.TryGetComponent<PrototypeMotor>(out var ropeMotor) && ropeMotor.IsOnRope)
+                visual.HoldRope(ropeMotor, mount);
             if (!lobby && fox && motion == PrototypeMotion.Interact &&
                 owner.TryGetComponent<PrototypeMotor>(out var foxMotor))
                 visual.ReachLever(foxMotor);
+        }
+
+        private void HoldRope(PrototypeMotor motor, Transform mount)
+        {
+            if (mantlePaws[0] == null || mantlePaws[1] == null) return;
+            Vector3 up = motor.RopeGripUp;
+            if (up.sqrMagnitude < .5f) up = Vector3.up;
+            Vector3 forward = Vector3.ProjectOnPlane(mount.forward, up);
+            if (forward.sqrMagnitude < .01f) forward = Vector3.ProjectOnPlane(mount.right, up);
+            // Change the visual only; the motor keeps its existing rope position and momentum.
+            model.transform.rotation = Quaternion.LookRotation(forward.normalized, up);
+            Vector3 grip = motor.RopeGripPoint;
+            Vector3 centre = (mantlePaws[0].position + mantlePaws[1].position) * .5f;
+            model.transform.position += grip - centre;
+            for (int i = 0; i < 2; i++)
+            {
+                Vector3 target = grip + up * (i == 0 ? .055f : -.055f);
+                ReachPoint(mantlePaws[i], mantleChains[i], target, 1f);
+            }
         }
 
         private void UpdateMovementVisual(Vector3 position, Transform mount, PrototypeMotion motion, bool otter, Transform block)
@@ -212,7 +236,7 @@ namespace TwoTails.Prototype
 
         private void Play(string requested)
         {
-            if (modelSpecies is PrototypeSpecies.Fox or PrototypeSpecies.Otter or PrototypeSpecies.Beaver or PrototypeSpecies.Rabbit)
+            if (modelSpecies is PrototypeSpecies.Fox or PrototypeSpecies.Otter or PrototypeSpecies.Beaver or PrototypeSpecies.Rabbit or PrototypeSpecies.Elephant)
             {
                 PlayFox(requested);
                 return;
@@ -285,3 +309,4 @@ namespace TwoTails.Prototype
         }
     }
 }
+

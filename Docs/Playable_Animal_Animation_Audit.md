@@ -269,3 +269,27 @@ Six new .gitkeep files under Finished Animation appeared in Git status alongside
 Additional Unity import verification: all ten looping clips returned a maximum start/near-end local rotation difference of 0.000 degrees on the imported model at the reported precision. The rope release was observed before the regrab cooldown. No new Console errors since the pre-existing cursor.
 
 `nRabbit Jump_Air follow-up (2026-11-27): froze source frame 3 at 60 fps into a 0.6 s constant airborne hold across all 168 curves using Unity AnimationUtility. Loop enabled, existing asset GUID retained. Removes pose oscillation and extra vertical animation. Gameplay rendering remains pending.
+
+## Elephant first pass — 2026-11-27
+
+Recursive Prefabs scan found Elephant.fbx only, with rest (0.033 s) and editor preview, no gameplay actions. All requested actions were missing. Authored on original rest skeleton, with unchanged weights, hierarchy and FBX GUID. No source action reused. Native scale measured 1.480 m high; visual child scaled uniformly 1.1149 for 1.65 m reference height and rest mesh floor aligned, without editing Player root/collider.
+
+| New clip / state | Seconds | Loop |
+| --- | ---: | --- |
+| Idle, Sit | 2.4 each | Yes |
+| Run | 0.9 | Yes |
+| Jump_Start | 0.27 | No |
+| Jump_Air | 0.65 | Yes |
+| Jump_Land | 0.4 | No |
+| Interact | 0.65 | No |
+| Death | 0.65 | No |
+| Push, Push_Hold, Pull, Pull_Hold | 0.9 each | Yes |
+| Strike | 0.8 | No |
+
+Delivery candidate: Assets/Art/Finished Animation/Elephant/Resources/TwoTailsElephantVisual.prefab; Elephant.controller; ElephantAvatar.asset; 13 Elephant-owned clips. Uses existing external Elephant Preview_URP.mat and baseColor, leaves BakedMaterial importer untouched. Generic Avatar valid; root motion false. Walk has no dedicated motor tier. Existing motor allows Elephant jumping. GripSpeed blends hold at 0 with step at 1.2 m/s using existing actual block displacement input. Strike uses a new appended motion enum, requested on successful board use; board effect remains immediate. Remote Strike cue synchronization not verified/complete.
+
+Controlled Play Mode Animator selection confirmed Idle/Sit/Run/three jumps/Interact/Death/Push/Pull/Strike all reference Elephant motions. This was a temporary prefab probe, not actual player input. Actual lobby swap, contact and deformation rendering, grounded gait, push/pull sequences, death and Host/Client remain unverified. These are first-pass assets awaiting acceptance. Sit leg placement and animated mesh floor require visual correction if necessary; do not infer acceptance from successful binding. The normal player sequence probe was inconclusive after runtime species/state changed. Build authoring source: AgentScripts/BuildElephant.cs.
+
+Elephant torso follow-up: six clips updated in place with hips/chest/neck curves and local hips compression; Run local heave 0–0.036 m, Interact -0.022 m, Strike -0.025 m, takeoff -0.055 m, landing -0.065 m; Jump_Air fixed height. No scale curves or gameplay displacement changes. Unity authoring succeeded; rendered contact and deformation acceptance still pending. Authoring source: AgentScripts/TuneElephantBody.cs.
+
+Monkey rope grip follow-up (2026-11-27): added RopeGripUp tangent accessor and post-animation-request HoldRope forelimb targeting in MonkeyPresentation. Visual-only alignment and hand-centre correction keep the hands at the runtime grip across the climb/hang transition. Unity compilation passed; rendered contact, transition smoothness and remote parity remain pending.
