@@ -105,9 +105,11 @@ namespace TwoTails.Prototype
             }
 
             string rejection = requested.TryUse(interactionOrigin, player);
-            if (rejection != null)
-                RejectRpc(rejection);
+            if (rejection != null) RejectRpc(rejection); else PlayInteractionRpc();
         }
+
+        [Rpc(SendTo.Owner,InvokePermission=RpcInvokePermission.Server)]
+        private void PlayInteractionRpc() => player.Motor.ShowInteraction();
 
         [Rpc(SendTo.Owner, InvokePermission = RpcInvokePermission.Server)]
         private void RejectRpc(string message)

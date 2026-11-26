@@ -10,10 +10,13 @@ namespace TwoTails.Prototype
         [SerializeField, Range(2, 3)] private int weight = 2;
         [SerializeField] private bool online;
         private readonly NetworkVariable<Vector3> position = new();
+        private readonly NetworkVariable<bool> airborne = new();
         private readonly Dictionary<PrototypeMotor, (Vector3 direction, float expires)> grips = new();
         private readonly List<PrototypeMotor> expired = new();
         private BoxCollider shape;
         private Vector3 start;
+        private float fallSpeed;
+        private bool falling;
 
         private void Awake()
         {
@@ -38,7 +41,7 @@ namespace TwoTails.Prototype
 
         internal bool CanReach(PrototypeMotor motor, bool facing)
         {
-            if ((online && !IsSpawned) || motor == null || !motor.gameObject.activeInHierarchy ||
+            if (falling || (online && (!IsSpawned || airborne.Value)) || motor == null || !motor.gameObject.activeInHierarchy ||
                 motor.GetComponent<AnimalMechanicsActor>()?.Locked == true ||
                 motor.GetComponent<PrototypeAnimal>() is not { } animal || animal.Species == PrototypeSpecies.Rabbit)
                 return false;
@@ -77,6 +80,7 @@ namespace TwoTails.Prototype
         private void FixedUpdate()
         {
             if (online && (!IsSpawned || !IsServer)) return;
+            if (StepGravity()) return;
             expired.Clear();
             Vector3 direction = Vector3.zero;
             float speed = float.PositiveInfinity;
@@ -115,6 +119,55 @@ namespace TwoTails.Prototype
             transform.position += delta;
             Physics.SyncTransforms();
             if (online) position.Value = transform.position;
+        }
+
+        private bool StepGravity()
+        {
+            Bounds bounds = shape.bounds;
+            Vector3 center = bounds.center + Vector3.up * .04f;
+            Vector3 extents = bounds.extents;
+            extents.x = Mathf.Max(.01f, extents.x - .02f);
+            extents.z = Mathf.Max(.01f, extents.z - .02f);
+            float dt = Time.fixedDeltaTime;
+            float step = (fallSpeed + Mathf.Max(0f, -Physics.gravity.y) * dt) * dt;
+            float distance = step;
+            int count = Physics.BoxCastNonAlloc(center, extents, Vector3.down, obstacles,
+                Quaternion.identity, step + .04f, ~0, QueryTriggerInteraction.Ignore);
+            bool supported = false;
+            for (int i = 0; i < count; i++)
+            {
+                var hit = obstacles[i];
+                if (hit.transform.IsChildOf(transform) || hit.transform.GetComponentInParent<PrototypeMotor>() != null ||
+                    hit.normal.y < .5f) continue;
+                float gap = Mathf.Max(0f, hit.distance - .04f);
+                if (gap > distance) continue;
+                distance = gap;
+                supported = true;
+            }
+            if (supported && distance < .001f)
+            {
+                falling = false;
+                fallSpeed = 0f;
+                if (online) airborne.Value = false;
+                return false;
+            }
+            falling = !supported;
+            fallSpeed = supported ? 0f : step / dt;
+            grips.Clear();
+            transform.position += Vector3.down * distance;
+            if (transform.position.y < start.y - 25f)
+            {
+                transform.position = start;
+                falling = false;
+                fallSpeed = 0f;
+            }
+            Physics.SyncTransforms();
+            if (online)
+            {
+                airborne.Value = falling;
+                position.Value = transform.position;
+            }
+            return true;
         }
 
         private readonly RaycastHit[] obstacles = new RaycastHit[32];

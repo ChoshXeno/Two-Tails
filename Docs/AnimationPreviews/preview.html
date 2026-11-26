@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>Two Tails animation direction preview</title>
+<style>
+  body { font: 16px system-ui, sans-serif; margin: 2rem; color: #eef1f4; background: #20252b; }
+  main { display: flex; flex-wrap: wrap; gap: 2rem; }
+  section { width: min(100%, 640px); }
+  img { width: 100%; border-radius: 10px; background: #30363c; }
+  input { width: 100%; }
+  small { color: #bac2cb; }
+</style>
+<h1>Two Tails: first animation direction</h1>
+<p>Pose samples from the Blender actions. Press Play to cycle the sampled poses, or drag to inspect a key pose. These are previews, not gameplay capture.</p>
+<main>
+  <section data-name="Fox_Interact" data-frames="01,05,10,14,18">
+    <h2>Fox · Interact</h2><img alt="Fox interaction pose"><br>
+    <button type="button">Play</button><input type="range" min="0" max="4" value="0">
+    <small>Head locates the target, one forepaw reaches, then the stance settles.</small>
+  </section>
+  <section data-name="Monkey_Climb_Loop" data-frames="01,07,13,19,25">
+    <h2>Monkey · Climb_Loop</h2><img alt="Monkey climbing pose"><br>
+    <button type="button">Play</button><input type="range" min="0" max="4" value="0">
+    <small>Alternating reach test. Current torso posture still reads as ground locomotion and needs wall-orientation revision.</small>
+  </section>
+</main>
+<script>
+  for (const section of document.querySelectorAll('section')) {
+    const frames = section.dataset.frames.split(',');
+    const image = section.querySelector('img');
+    const slider = section.querySelector('input');
+    const button = section.querySelector('button');
+    let timer;
+    const show = i => { slider.value = i; image.src = `${section.dataset.name}_${frames[i]}.png`; };
+    show(0);
+    slider.addEventListener('input', () => show(+slider.value));
+    button.addEventListener('click', () => {
+      if (timer) { clearInterval(timer); timer = null; button.textContent = 'Play'; return; }
+      button.textContent = 'Pause';
+      timer = setInterval(() => show((+slider.value + 1) % frames.length), 200);
+    });
+  }
+</script>
+</html>

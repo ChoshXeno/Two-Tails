@@ -1,0 +1,27 @@
+run=False
+idle=True
+Jump_Start
+Jump_Air
+Jump_Land
+Run:Run:True:travel=1.586713
+Idle:True
+Wall hold:True
+Wall climb
+Wall end
+Final:Run:(-6.00, 2.94, 6.18)
+Rope grab/hold:True:True
+Rope climb:True:rise=0.8012056
+Swing input/hold:True:True
+Rope released:False:Rope
+Direct Host selected Monkey idle=True base=BakedMaterial_baseColor
+Transient rope release=True vertical=7.76242
+Monkey_Jump_Air seam max degrees=0.000
+Monkey_Idle seam max degrees=0.000
+Monkey_Climb_Loop seam max degrees=0.000
+Monkey_Sit seam max degrees=0.000
+Monkey_Wall_Hang_Idle seam max degrees=0.000
+Monkey_Vine_Hang_Idle seam max degrees=0.000
+Monkey_Vine_Climb seam max degrees=0.000
+Monkey_Push seam max degrees=0.000
+Monkey_Run seam max degrees=0.000
+Monkey_Pull seam max degrees=0.000

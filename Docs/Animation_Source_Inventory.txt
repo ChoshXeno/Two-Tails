@@ -1,0 +1,52 @@
+Assets/Prefabs/Beaver/Beaver_animated_All_animation.fbx avatar=NoAvatar
+wolf_jump_start seconds=0.2666667 loop=False
+wolf_jump_loop seconds=0.4666667 loop=False
+wolf_jump_end seconds=0.6666667 loop=False
+wolf_idle seconds=1.666667 loop=False
+wolf_dead seconds=1.266667 loop=False
+fox_mon_xiaohuli_01_run seconds=0.5333334 loop=False
+material=BakedMaterial shader=Universal Render Pipeline/Lit texture=NULL
+Assets/Prefabs/Beaver/Beaver_character.fbx avatar=NoAvatar
+rest seconds=0.03333334 loop=False
+material=BakedMaterial shader=Universal Render Pipeline/Lit texture=NULL
+Assets/Prefabs/Bunny/Bunny_animated_All_animation.fbx avatar=NoAvatar
+rabbit_Idle seconds=0.6666667 loop=False
+rabbit_ANIM_Rabbit_Walk seconds=0.6666667 loop=False
+rabbit_ANIM_Rabbit_IdleLieDown seconds=1 loop=False
+rabbit_ANIM_Rabbit_IdleAlertLookAround seconds=2.666667 loop=False
+rabbit_ANIM_Rabbit_Gallop seconds=0.4583333 loop=False
+rabbit_ANIM_Rabbit_Death seconds=0.7083334 loop=False
+rabbit_ANIM_Rabbit_1Hop seconds=1 loop=False
+material=BakedMaterial shader=Universal Render Pipeline/Lit texture=NULL
+Assets/Prefabs/Bunny/Bunny_character.fbx avatar=NoAvatar
+rest seconds=0.03333334 loop=False
+material=BakedMaterial shader=Universal Render Pipeline/Lit texture=NULL
+Assets/Prefabs/Elephant.fbx avatar=NoAvatar
+rest seconds=0.03333334 loop=False
+material=BakedMaterial.001 shader=Universal Render Pipeline/Lit texture=NULL
+Assets/Prefabs/Fox/Fox_animated_All_animation.fbx avatar=NoAvatar
+wolf_jump_loop seconds=0.4666667 loop=False
+fox_mon_xiaohuli_01_run seconds=0.5333334 loop=False
+fox_mon_xiaohuli_01_idle1 seconds=3.666667 loop=False
+fox_mon_xiaohuli_01_idle seconds=1.666667 loop=False
+wolf_jump_start seconds=0.2666667 loop=False
+wolf_jump_end seconds=0.6666667 loop=False
+fox_mon_xiaohuli_01_sit seconds=1.333333 loop=False
+fox_mon_xiaohuli_01_xiuwen seconds=3.5 loop=False
+wolf_dead seconds=1.266667 loop=False
+material=BakedMaterial shader=Universal Render Pipeline/Lit texture=NULL
+Assets/Prefabs/Fox/Fox_character.fbx avatar=NoAvatar
+rest seconds=0.03333334 loop=False
+material=BakedMaterial shader=Universal Render Pipeline/Lit texture=NULL
+Assets/Prefabs/Monkey.fbx avatar=NoAvatar
+rest seconds=0.03333334 loop=False
+material=BakedMaterial shader=Universal Render Pipeline/Lit texture=NULL
+Assets/Prefabs/Otter.fbx avatar=NoAvatar
+rest seconds=0.03333334 loop=False
+material=BakedMaterial shader=Universal Render Pipeline/Lit texture=NULL
+Assets/Art/AnimationTests/Fox_Interact_test_v1.fbx avatar=CreateFromThisModel
+Interact seconds=0.7083333 loop=False
+material=BakedMaterial shader=Universal Render Pipeline/Lit texture=NULL
+Assets/Art/AnimationTests/Monkey_Climb_Loop_test_v1.fbx avatar=CreateFromThisModel
+Climb_Loop seconds=1 loop=True
+material=BakedMaterial shader=Universal Render Pipeline/Lit texture=NULL

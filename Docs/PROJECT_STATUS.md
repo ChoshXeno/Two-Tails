@@ -1,6 +1,34 @@
 # Two Tails project status
 
-Last updated November 23, 2026 (Malaysia time).
+Last updated November 26, 2026 (Malaysia time).
+
+## Monkey contact and grip block follow-up — 2026-11-26
+
+Implemented wall-normal alignment and a visual standoff in MonkeyPresentation. PrototypeMotor clears wall and rope attachment when gripping and keeps Push selected with neutral input. PrototypeGripBlock now checks support, sweeps downward under gravity, releases grips while falling, replicates position and airborne state, and resets below its start height.
+
+Verified Unity loaded the revised code and OnlineTest localhost Host swapped Fox to Monkey via the lobby display. Runtime diagnostic lifts of both original scene blocks from Y=0.550 to Y=2.550 settled at Y=0.551. Directional wall limb contact, mantle, vine and rope constraints, push head contact, player-driven edge and respawn checks, and independent Client acceptance remain pending. See the animation audit for scope.
+
+## Monkey below-floor follow-up — 2026-11-26
+
+**Implemented:** MonkeyPresentation now recalculates the model wrapper's local position from the Player root every frame. This handles changes to the capsule Visual mount position or scale after instantiation, including the swap transition, without moving the Player root or changing collision/network components.
+
+**Verified in the live OnlineTest Host:** Before reload, Player root Y was 0.040 and CharacterController was grounded, but the Monkey wrapper local Y was -5.000 and its skinned feet were at Y=-3.960. Setting the wrapper to the root-relative Y=-1.000 immediately put the feet at Y=0.040. After leaving and restarting Play Mode, a new localhost Host exchanged Fox for Monkey through the Monkey Display (`Now playing Monkey`). The fresh source kept wrapper local Y=-1.000; subsequent samples showed the skinned feet matching the moving Player root (Y=3.761 and 3.420 during airborne motion). Animator Apply Root Motion remained false. The Player root, collision settings and network root were not edited. An independent Client view and an interactive on-ground screenshot remain unverified. No commit or push.
+
+## Monkey swap visual correction — 2026-11-26
+
+**Implemented:** `MonkeyPresentation` now places its model wrapper at the Player root in the Visual mount's local coordinates, keeps its local rotation aligned, and hides both the capsule renderer and child `FacingMarker` while Monkey is selected. The Player transform, CharacterController and network position are untouched.
+
+**Verified in SplitScreen Play Mode:** The original regression measured Monkey model feet at the Player root Y and the yellow FacingMarker visible. After correction, initial Monkey feet and root both measured Y 0.04, with the marker hidden and Animator root motion disabled. Swapping Monkey to Otter restored the capsule and marker, and swapping back produced feet Y 0.04 with the marker hidden. The Player root displacement from the species swap was zero.
+
+**Online limit:** An attempted Direct Host check in the current Editor did not reach a spawned player. The scene reported `CanStart=false`, and its Console then filled with unrelated `CooperativePuzzle.Paint` null references and `PrototypeOrbitDrag` EventSystem selected-object exceptions. Play Mode was stopped. Host/Client visual parity remains unverified in this correction; the same `MonkeyPresentation` component is used by both local and network Player prefabs through `PrototypeAnimal`. No commit or push.
+
+## Playable animal animation audit and test actions — 2026-11-26
+
+**Implemented in isolated assets:** Blender 5.3 generated `Fox_Interact_test_v1` and `Monkey_Climb_Loop_test_v1` on copies of their original rigs. Versioned `.blend` and FBX files are under `Assets/Art/AnimationTests`; sampled pose previews and an interactive frame viewer are under `Docs/AnimationPreviews`. The original FBXs, scenes, and playable Prefabs were not changed. See [the six-animal clip audit and proposed poses](Playable_Animal_Animation_Audit.md).
+
+**Verified in Blender and the live Unity Editor:** Both actions rendered on their own skinned models. Unity imported each as Generic with a valid Avatar and one named clip. Fox Interact is nonlooping, 0.71 s; Monkey Climb_Loop is looping, 1.00 s, with a 0.000-degree sampled first/last front-foot pose difference. Sampling temporary Unity instances moved the left front foot by 0.170 m (Fox) and 0.293 m (Monkey). The captured Console cursor had one pre-existing error and no new entries during import. This confirms asset import and bone playback, not animation in the game.
+
+**Needs repair and next step:** Monkey's first-pass climbing motion still reads too much like ground locomotion in the preview. The playable Prefabs currently use capsule Visuals and have no Animator; the motor's motion signal has no presentation listener. Review the preview direction and unresolved gameplay triggers before revising Monkey, wiring copied visuals/Animator presentation, or making the remaining clips. In-game animation, two-player presentation, and physical-device checks are pending. No Unity version/package change, commit, or push.
 
 ## Goals and development environment
 
@@ -206,3 +234,14 @@ Verified Unity compilation and a scripted SplitScreen Play Mode check on Weight 
 ## Prototype migration audit — 2026-11-24
 
 The user reported the current prototype mechanics accepted. See [migration audit](Prototype_Migration_Audit.md) and [actual Inspector inventory](Prototype_Inspector_Inventory.md). Unity inspected five scenes and two player prefabs with zero missing scripts, broken serialized Prototype references or repeated MonoBehaviour types on the same object. SplitScreen Play Mode confirmed separate Fox and Monkey camera targets. An unsaved runtime scene copy preserved the pool's shore reference and accepted a level change. Removed one unused shader helper and Unity reported zero diagnostics for both shaders. No scene or prefab edits. Independent Online Host/Client and visual regression remain unverified in this audit.
+
+## Animation preparation follow-up — 2026-11-26
+Fox animated FBX is now present with nine clips; no restoration performed. Full Unity subclip inventory saved to Docs/Animation_Source_Inventory.txt. Six independent URP materials and preview Prefabs use reliable same-animal Base Maps; Elephant/Monkey/Otter packed textures extracted separately. Original importers, models and Player Prefabs unchanged. Finished Animation animal directories prepared, empty. Rendered Unity material acceptance and full Console-message diagnosis remain pending. See audit follow-up before starting an animal. No commit/push.
+
+
+## Monkey animation and Lobby presentation — 2026-11-26
+
+Implemented 15 Monkey actions on a copy of its source rig, imported a valid Generic Avatar, added the Animator and routed the Monkey visual through existing local/network species identities. Lobby slots show Monkey Sit while holding Monkey. Finished Animation placeholders are Git-visible. SplitScreen checked Sit, Run/Idle, jump phases, wall hold/climb/top exit and rope hold/climb/swing input. Direct localhost Host used the existing exchange to select Monkey and confirmed its Idle Animator and Base Map. See the animation audit and raw Play Mode notes for scope. Independent Client/Relay, visual contact and loop inspection, and specific Interact/Death/Push/Pull gameplay checks remain pending. No commit or push.
+
+Follow-up probes confirmed transient rope release before regrab and matching sampled start/near-end rotations for all ten looping Unity clips (0.000 degrees at reported precision).
+

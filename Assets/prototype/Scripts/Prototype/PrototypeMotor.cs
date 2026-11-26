@@ -54,7 +54,30 @@ namespace TwoTails.Prototype
         private PrototypeClimbSurface climbing;
         private float climbReattachAt;
         public bool IsClimbing => climbing!=null;
-        public PrototypeMotion Motion => IsOnRope ? PrototypeMotion.Rope : IsClimbing ? PrototypeMotion.Climb : controller!=null && !controller.isGrounded ? (verticalSpeed>0 ? PrototypeMotion.Jump : PrototypeMotion.Fall) : moveInput.sqrMagnitude>0.01f ? PrototypeMotion.Run : PrototypeMotion.Idle;
+        internal PrototypeClimbSurface ClimbSurface => climbing;
+        private float climbEndUntil;
+        private float deathUntil;
+        private PrototypeMotion MonkeyMotion
+        {
+            get
+            {
+                if (Time.time < deathUntil) return PrototypeMotion.Death;
+                if (IsGripping)
+                    return gripDirection < -.1f ? PrototypeMotion.Pull : PrototypeMotion.Push;
+                if (IsOnRope) return Mathf.Abs(ropeClimb) > .01f ? PrototypeMotion.Vine_Climb : PrototypeMotion.Rope;
+                if (IsClimbing) return moveInput.sqrMagnitude > .01f ? PrototypeMotion.Climb : PrototypeMotion.Wall_Hang_Idle;
+                if (Time.time < climbEndUntil && verticalSpeed <= 0f) return PrototypeMotion.Climb_End;
+                if (Time.time < interactUntil && controller.isGrounded) return PrototypeMotion.Interact;
+                return GroundMotion;
+            }
+        }
+        private float gripDirection;
+        private float interactUntil;
+        internal void ShowInteraction() => interactUntil = Time.time + .667f;
+        public PrototypeMotion Motion => TryGetComponent<PrototypeAnimal>(out var animal) &&
+            animal.Species == PrototypeSpecies.Monkey ? MonkeyMotion :
+            IsOnRope ? PrototypeMotion.Rope : IsClimbing ? PrototypeMotion.Climb : GroundMotion;
+        private PrototypeMotion GroundMotion => controller!=null && !controller.isGrounded ? (verticalSpeed>0 ? PrototypeMotion.Jump : PrototypeMotion.Fall) : moveInput.sqrMagnitude>0.01f ? PrototypeMotion.Run : PrototypeMotion.Idle;
         private void LateUpdate() { if(TryGetComponent<PrototypeAnimal>(out var animal)) animal.ApplyMotion(Motion); }
         public float VerticalSpeed => verticalSpeed;
         public void RequestJump() { if(IsOnRope || IsClimbing || (controller!=null && (rabbit ? jumpsUsed < 2 : controller.isGrounded) && GetComponent<PrototypeSwimmer>()?.IsSwimming!=true)) jumpPending=true; }
@@ -81,6 +104,8 @@ namespace TwoTails.Prototype
             }
             if (grip == null) return false;
             gripOffset = transform.position - grip.transform.position;
+            climbing = null;
+            ClearRope();
             jumpPending = false;
             nextGripSend = 0;
             grip.Submit(this, true, Vector3.zero);
@@ -221,7 +246,7 @@ namespace TwoTails.Prototype
             if(transform.position.y>=target.y-0.05f)
             {
                 if(ClearAt(target) && Physics.Raycast(target+Vector3.up*0.1f,Vector3.down,0.2f,~(1<<gameObject.layer),QueryTriggerInteraction.Ignore))
-                { controller.Move(target-transform.position); if((transform.position-target).sqrMagnitude<0.01f) climbing=null; }
+                { controller.Move(target-transform.position); if((transform.position-target).sqrMagnitude<0.01f) { climbing=null; climbEndUntil=Time.time+.54f; } }
                 return true;
             }
             controller.Move(Vector3.up*Mathf.Min(climbAxes.y*climbSpeed*dt,target.y-transform.position.y));
@@ -273,6 +298,7 @@ namespace TwoTails.Prototype
             if(GetComponent<AnimalMechanicsActor>()?.Locked==true){ClearRope();ClearPendingInput();return;}
             if (transform.position.y < resetHeight)
             {
+                deathUntil = Time.time + .65f;
                 ResetToSpawn();
                 return;
             }
@@ -291,6 +317,7 @@ namespace TwoTails.Prototype
                 else
                 {
                     jumpPending = false;
+                    gripDirection = Vector3.Dot(direction, Facing.forward);
                     if (Time.unscaledTime >= nextGripSend)
                     {
                         grip.Submit(this, true, direction);

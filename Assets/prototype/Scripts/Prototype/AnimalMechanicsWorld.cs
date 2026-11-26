@@ -282,7 +282,7 @@ namespace TwoTails.Prototype
        previous.PositionE == state.PositionE && previous.SpeciesE == state.SpeciesE) return;
    displays[0].position=state.PositionA;displays[1].position=state.PositionB;displays[2].position=state.PositionC;displays[3].position=state.PositionD;
    if(displays.Length>4)displays[4].position=state.PositionE;
-   for(int i=0;i<displays.Length;i++){displayVisuals[i].GetPropertyBlock(colors);colors.SetColor("_BaseColor",PrototypeAnimal.ColorFor(DisplaySpecies(state,i)));displayVisuals[i].SetPropertyBlock(colors);var text=displays[i].GetComponentInChildren<TextMesh>();text.text=(DisplaySpecies(state,i)).ToString();}
+   for(int i=0;i<displays.Length;i++){MonkeyPresentation.Show(displays[i].gameObject, displayVisuals[i].transform, displayVisuals[i], DisplaySpecies(state,i)==PrototypeSpecies.Monkey, PrototypeMotion.Idle, true);displayVisuals[i].GetPropertyBlock(colors);colors.SetColor("_BaseColor",PrototypeAnimal.ColorFor(DisplaySpecies(state,i)));displayVisuals[i].SetPropertyBlock(colors);var text=displays[i].GetComponentInChildren<TextMesh>();text.text=(DisplaySpecies(state,i)).ToString();}
    for(int i=0;i<Mathf.Min(logs.Length, AnimalMechanicsState.LogLimit);i++)if(logs[i]!=null)logs[i].gameObject.SetActive((state.Picked&(1<<i))==0);
    ApplySlots();
   }  private void Update(){for(int i=0;i<displays.Length;i++){double remaining=DisplayBusy(State,i)-Now;displayVisuals[i].transform.localScale=Vector3.one*Mathf.Lerp(1,.25f,Mathf.Clamp01((float)(remaining/swapDuration)));}}

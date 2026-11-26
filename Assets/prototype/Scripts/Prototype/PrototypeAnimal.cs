@@ -1,7 +1,7 @@
 using UnityEngine;
 namespace TwoTails.Prototype
 {
- public enum PrototypeMotion { Idle, Run, Jump, Fall, Climb, Interact, Ability, Rope }
+ public enum PrototypeMotion { Idle, Run, Jump, Fall, Climb, Interact, Ability, Rope, Wall_Hang_Idle, Climb_End, Vine_Climb, Push, Pull, Death }
  public enum PrototypeSpecies { Fox, Monkey, Otter, Beaver, Rabbit, Elephant }
  public sealed class PrototypeAnimal : MonoBehaviour
  {
@@ -11,6 +11,12 @@ namespace TwoTails.Prototype
   public PrototypeMotion Motion { get; private set; }
   public event System.Action<PrototypeMotion> MotionChanged;
   public void ApplyMotion(PrototypeMotion value) { if(Motion==value)return;Motion=value;MotionChanged?.Invoke(value); }
+  private void LateUpdate()
+  {
+   if (!TryGetComponent<PrototypeMotor>(out var motor)) return;
+   var mount = motor.Facing;
+   MonkeyPresentation.Show(gameObject, mount, mount.GetComponent<Renderer>(), species == PrototypeSpecies.Monkey, Motion);
+  }
   private MaterialPropertyBlock colors;
   private void Start()=>Apply(species);
   public static Color ColorFor(PrototypeSpecies value)=>value==PrototypeSpecies.Rabbit?new Color(.95f,.55f,.75f):value==PrototypeSpecies.Elephant?new Color(.45f,.58f,.72f):value==PrototypeSpecies.Fox?new Color(1,.34f,.04f):value==PrototypeSpecies.Monkey?new Color(1,.85f,.08f):value==PrototypeSpecies.Otter?new Color(.36f,.16f,.06f):Color.white;
