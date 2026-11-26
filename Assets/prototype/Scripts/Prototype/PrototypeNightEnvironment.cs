@@ -51,7 +51,8 @@ namespace TwoTails.Prototype
    foreach(var light in FindObjectsByType<Light>())
     if((light.type==LightType.Point||light.type==LightType.Spot)&&light.GetComponent<PrototypeGuideLight>()==null)
      light.gameObject.AddComponent<PrototypeGuideLight>();
-   foreach(var renderer in FindObjectsByType<MeshRenderer>())Prepare(renderer);
+   foreach(var renderer in FindObjectsByType<Renderer>(FindObjectsInactive.Include))
+    if(renderer is MeshRenderer || renderer is SkinnedMeshRenderer)Prepare(renderer);
    if(Application.isEditor||Debug.isDebugBuild)
    {
     ui=PrototypeTestMenu.CanvasRoot("Developer Lighting");
@@ -74,6 +75,13 @@ namespace TwoTails.Prototype
      bool transparent=text||(source.HasProperty("_Surface")&&source.GetFloat("_Surface")>0);
      clone=new Material(transparent&&transparentShader!=null?transparentShader:nightShader){name=source.name+" (Level 1 runtime)"};
      if(source.HasProperty("_BaseColor"))clone.SetColor("_BaseColor",source.GetColor("_BaseColor"));
+     if(source.HasProperty("_BaseMap"))
+     {
+      clone.SetTexture("_BaseMap",source.GetTexture("_BaseMap"));
+      clone.SetTextureScale("_BaseMap",source.GetTextureScale("_BaseMap"));
+      clone.SetTextureOffset("_BaseMap",source.GetTextureOffset("_BaseMap"));
+     }
+     if(source.HasProperty("_Cull"))clone.SetFloat("_Cull",source.GetFloat("_Cull"));
      if(text){clone.SetFloat("_IsText",1);clone.SetColor("_BaseColor",Color.white);clone.mainTexture=source.mainTexture;}
      copies.Add(source,clone);
     }

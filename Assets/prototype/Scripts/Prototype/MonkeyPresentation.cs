@@ -68,6 +68,10 @@ namespace TwoTails.Prototype
                     return;
                 }
                 visual.model = Instantiate(selectedPrefab, mount);
+                var night = FindFirstObjectByType<PrototypeNightEnvironment>();
+                if (night != null)
+                    foreach (var renderer in visual.model.GetComponentsInChildren<Renderer>(true))
+                        if (renderer is MeshRenderer || renderer is SkinnedMeshRenderer) night.Prepare(renderer);
                 if (rabbit && !lobby)
                     visual.model.transform.localScale *= 2f;
                 visual.modelSpecies = species;

@@ -2,6 +2,11 @@
 
 Last updated November 26, 2026 (Malaysia time).
 
+## Animal night visibility registration — 2026-11-27
+
+Fixed PrototypeNightEnvironment initialization to prepare MeshRenderer and SkinnedMeshRenderer, including inactive children. MonkeyPresentation registers all renderer descendants when a species visual is instantiated (player, remote presentation and lobby share this path). Runtime cloned night materials now preserve Base Map, tiling, offset and culling; PrototypeAnimalVision shader samples UV/Base Map. Previously skinned animals bypassed the night shader while ordinary MeshRenderer geometry used camera-specific visibility. No renderer enabled toggles, shared source material edits or layer changes were introduced; existing per-camera constants and visibility/light functions are reused.
+
+Verified in OnlineTest Play Mode with Developer Lights=false and FoxNightVision=false: active skinned renderer used Two Tails/Prototype Animal Vision, layer 0/rendering layer 1. Controlled runtime preparation of all six prefabs retained their same-animal Base Maps and enabled renderers. C# compilation passed and ShaderUtil reported no shader errors. These are runtime binding checks, not screenshot/pixel acceptance. No interactive bright-dark-bright path, actual species exchange, Fox Vision rendered toggle, independent Host/Client or split-screen divergent-camera render acceptance completed. Next: complete those visual scenarios, including accessories and local-light occlusion. No commit/push.
 ## Monkey rope grip follow-up — 2026-11-27
 
 Implemented runtime hand targeting while Monkey is on a rope. Previously Vine_Hang_Idle only supplied an authored pose with no continuous rope contact constraint. Presentation now aligns the visual to the rope tangent, moves only the visual so the mean hand position reaches RopeGripPoint, then solves both forelimbs toward adjacent grip points. The solver runs after the animation request in presentation, including climb-to-hang transitions; it stops automatically when IsOnRope clears. Player collision, rope momentum and release mechanics are unchanged. Unity compilation completed with no errors. Rendered swing transitions, palm orientation, collision clearance and Host/Client remain unverified. Next: exercise real grab/climb/swing/release and inspect side views.
@@ -343,6 +348,7 @@ Fox animated FBX is now present with nine clips; no restoration performed. Full 
 Implemented 15 Monkey actions on a copy of its source rig, imported a valid Generic Avatar, added the Animator and routed the Monkey visual through existing local/network species identities. Lobby slots show Monkey Sit while holding Monkey. Finished Animation placeholders are Git-visible. SplitScreen checked Sit, Run/Idle, jump phases, wall hold/climb/top exit and rope hold/climb/swing input. Direct localhost Host used the existing exchange to select Monkey and confirmed its Idle Animator and Base Map. See the animation audit and raw Play Mode notes for scope. Independent Client/Relay, visual contact and loop inspection, and specific Interact/Death/Push/Pull gameplay checks remain pending. No commit or push.
 
 Follow-up probes confirmed transient rope release before regrab and matching sampled start/near-end rotations for all ten looping Unity clips (0.000 degrees at reported precision).
+
 
 
 

@@ -19,11 +19,13 @@ Shader "Two Tails/Prototype Animal Vision"
    #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
    CBUFFER_START(UnityPerMaterial)
    half4 _BaseColor;
+   float4 _BaseMap_ST;
    CBUFFER_END
+   TEXTURE2D(_BaseMap); SAMPLER(sampler_BaseMap);
    #include "PrototypeVisibility.hlsl"
-   struct Attributes { float4 positionOS:POSITION; float3 normalOS:NORMAL; };
-   struct Varyings { float4 positionCS:SV_POSITION; float3 positionWS:TEXCOORD0; half3 normalWS:TEXCOORD1; };
-   Varyings Vert(Attributes a){ Varyings o;o.positionWS=TransformObjectToWorld(a.positionOS.xyz);o.positionCS=TransformWorldToHClip(o.positionWS);o.normalWS=TransformObjectToWorldNormal(a.normalOS);return o; }
+   struct Attributes { float4 positionOS:POSITION; float3 normalOS:NORMAL; float2 uv:TEXCOORD0; };
+   struct Varyings { float4 positionCS:SV_POSITION; float3 positionWS:TEXCOORD0; half3 normalWS:TEXCOORD1; float2 uv:TEXCOORD2; };
+   Varyings Vert(Attributes a){ Varyings o;o.positionWS=TransformObjectToWorld(a.positionOS.xyz);o.positionCS=TransformWorldToHClip(o.positionWS);o.normalWS=TransformObjectToWorldNormal(a.normalOS);o.uv=TRANSFORM_TEX(a.uv,_BaseMap);return o; }
    half4 Frag(Varyings i):SV_Target
    {
     half3 normal=normalize(i.normalWS);
@@ -40,7 +42,7 @@ Shader "Two Tails/Prototype Animal Vision"
     bool nearReveal=_AnimalVisionEnabled>.5 && _AnimalVision.w<.5;
     data.bakedGI=nearReveal?half3(0,0,0):lerp(half3(.03,.04,.06),_AnimalNightTint.rgb*visibility*_AnimalVision.z*hemi,_AnimalVisionEnabled);
     SurfaceData surface=(SurfaceData)0;
-    surface.albedo=_BaseColor.rgb;surface.alpha=1;surface.occlusion=1;
+    surface.albedo=_BaseColor.rgb*SAMPLE_TEXTURE2D(_BaseMap,sampler_BaseMap,i.uv).rgb;surface.alpha=1;surface.occlusion=1;
     surface.smoothness=0.18;surface.normalTS=half3(0,0,1);
     half4 lit=UniversalFragmentPBR(data,surface);
     float localLight=AnimalLocalLight(i.positionWS,i.positionCS);
