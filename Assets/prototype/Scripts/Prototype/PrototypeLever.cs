@@ -13,8 +13,13 @@ namespace TwoTails.Prototype
         private int lastFrame = -1;
         private float nextToggleTime;
         private Quaternion restRotation;
+        private float pawMotionStarted = float.NegativeInfinity;
+        private bool pawMotionOpen;
 
         public Vector3 Position => interactionPoint != null ? interactionPoint.position : transform.position;
+        internal Vector3 PawContact => handle != null
+            ? handle.TransformPoint(Vector3.up * .45f)
+            : Position;
         public bool CanOperate => door != null && door.isActiveAndEnabled;
         public bool TargetOpen => door != null && door.TargetOpen;
         public bool IsMoving => door != null && door.IsMoving;
@@ -39,8 +44,30 @@ namespace TwoTails.Prototype
 
         public void ApplyTargetPose(bool open)
         {
+            if (Time.time < pawMotionStarted + .45f && open == pawMotionOpen) return;
+            pawMotionStarted = float.NegativeInfinity;
             if (handle != null)
-                handle.localRotation = restRotation * Quaternion.Euler(open ? pullAngle : 0f, 0f, 0f);
+                handle.localRotation = HandleRotation(open);
+        }
+
+        internal void ShowPawToggle(bool open)
+        {
+            if (handle == null) return;
+            pawMotionOpen = open;
+            pawMotionStarted = Time.time;
+            handle.localRotation = HandleRotation(!open);
+        }
+
+        private Quaternion HandleRotation(bool open) =>
+            restRotation * Quaternion.Euler(open ? pullAngle : 0f, 0f, 0f);
+
+        private void Update()
+        {
+            if (float.IsNegativeInfinity(pawMotionStarted) || handle == null) return;
+            float elapsed = Time.time - pawMotionStarted;
+            float progress = Mathf.SmoothStep(0f, 1f, (elapsed - .19f) / .24f);
+            handle.localRotation = Quaternion.Slerp(HandleRotation(!pawMotionOpen), HandleRotation(pawMotionOpen), progress);
+            if (elapsed >= .45f) pawMotionStarted = float.NegativeInfinity;
         }
     }
 }

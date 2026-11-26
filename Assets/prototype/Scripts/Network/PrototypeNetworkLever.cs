@@ -70,5 +70,6 @@ namespace TwoTails.Prototype
         }
 
         internal string Prompt => door.DemandOpen ? "E / Interact: Close door" : "E / Interact: Open door";
+        internal bool DemandOpen => door.DemandOpen;
     }
 }

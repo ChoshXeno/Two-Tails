@@ -55,7 +55,13 @@ namespace TwoTails.Prototype
         private float climbReattachAt;
         public bool IsClimbing => climbing!=null;
         internal PrototypeClimbSurface ClimbSurface => climbing;
-        private float climbEndUntil;
+        internal const float MantleSeconds = .84f;
+        private float mantleElapsed;
+        private bool mantling;
+        private Vector3 mantleStart, mantleLanding;
+        internal bool IsMantling => mantling;
+        internal Vector3 MantleEdge { get; private set; }
+        internal float MantleProgress => mantleElapsed / MantleSeconds;
         private float deathUntil;
         private PrototypeMotion MonkeyMotion
         {
@@ -65,18 +71,46 @@ namespace TwoTails.Prototype
                 if (IsGripping)
                     return gripDirection < -.1f ? PrototypeMotion.Pull : PrototypeMotion.Push;
                 if (IsOnRope) return Mathf.Abs(ropeClimb) > .01f ? PrototypeMotion.Vine_Climb : PrototypeMotion.Rope;
+                if (mantling) return PrototypeMotion.Climb_End;
                 if (IsClimbing) return moveInput.sqrMagnitude > .01f ? PrototypeMotion.Climb : PrototypeMotion.Wall_Hang_Idle;
-                if (Time.time < climbEndUntil && verticalSpeed <= 0f) return PrototypeMotion.Climb_End;
                 if (Time.time < interactUntil && controller.isGrounded) return PrototypeMotion.Interact;
                 return GroundMotion;
             }
         }
         private float gripDirection;
         private float interactUntil;
-        internal void ShowInteraction() => interactUntil = Time.time + .667f;
-        public PrototypeMotion Motion => TryGetComponent<PrototypeAnimal>(out var animal) &&
-            animal.Species == PrototypeSpecies.Monkey ? MonkeyMotion :
-            IsOnRope ? PrototypeMotion.Rope : IsClimbing ? PrototypeMotion.Climb : GroundMotion;
+        internal PrototypeLever InteractionLever { get; private set; }
+        internal float InteractionProgress => Mathf.Clamp01(1f - (interactUntil - Time.time) / .667f);
+        internal void ShowInteraction(PrototypeLever lever, bool open)
+        {
+            InteractionLever = lever;
+            interactUntil = Time.time + .667f;
+            if (GetComponent<PrototypeAnimal>()?.Species == PrototypeSpecies.Fox && lever != null)
+                lever.ShowPawToggle(open);
+        }
+        public PrototypeMotion Motion
+        {
+            get
+            {
+                var species = GetComponent<PrototypeAnimal>()?.Species;
+                if (species == PrototypeSpecies.Monkey) return MonkeyMotion;
+                if (species == PrototypeSpecies.Otter)
+                {
+                    if (Time.time < deathUntil) return PrototypeMotion.Death;
+                    if (TryGetComponent<PrototypeSwimmer>(out var swimmer) && swimmer.IsSwimming)
+                        return swimmer.Motion(moveInput);
+                    if (IsGripping) return gripDirection < -.1f ? PrototypeMotion.Pull : PrototypeMotion.Push;
+                    if (Time.time < interactUntil && controller.isGrounded) return PrototypeMotion.Interact;
+                }
+                if (species == PrototypeSpecies.Fox)
+                {
+                    if (Time.time < deathUntil) return PrototypeMotion.Death;
+                    if (IsGripping) return gripDirection < -.1f ? PrototypeMotion.Pull : PrototypeMotion.Push;
+                    if (Time.time < interactUntil && controller.isGrounded) return PrototypeMotion.Interact;
+                }
+                return IsOnRope ? PrototypeMotion.Rope : IsClimbing ? PrototypeMotion.Climb : GroundMotion;
+            }
+        }
         private PrototypeMotion GroundMotion => controller!=null && !controller.isGrounded ? (verticalSpeed>0 ? PrototypeMotion.Jump : PrototypeMotion.Fall) : moveInput.sqrMagnitude>0.01f ? PrototypeMotion.Run : PrototypeMotion.Idle;
         private void LateUpdate() { if(TryGetComponent<PrototypeAnimal>(out var animal)) animal.ApplyMotion(Motion); }
         public float VerticalSpeed => verticalSpeed;
@@ -88,6 +122,7 @@ namespace TwoTails.Prototype
         private float nextGripSend;
         internal float GripSpeed => speed;
         public bool IsGripping => grip != null;
+        internal Transform GrippedBlock => grip != null ? grip.transform : null;
         public Vector3 GripPoint => grip != null ? grip.GetComponent<BoxCollider>().ClosestPoint(transform.position + Vector3.up) : transform.position;
 
         internal bool TryGrip()
@@ -104,6 +139,7 @@ namespace TwoTails.Prototype
             }
             if (grip == null) return false;
             gripOffset = transform.position - grip.transform.position;
+            gripDirection = 0f;
             climbing = null;
             ClearRope();
             jumpPending = false;
@@ -243,14 +279,46 @@ namespace TwoTails.Prototype
                 return true;
             }
             Vector3 target=climbing.Landing+Vector3.Project(transform.position-climbing.Landing,tangent);
-            if(transform.position.y>=target.y-0.05f)
+            float grabHeight = target.y - .90f;
+            if(transform.position.y>=grabHeight-.03f)
             {
-                if(ClearAt(target) && Physics.Raycast(target+Vector3.up*0.1f,Vector3.down,0.2f,~(1<<gameObject.layer),QueryTriggerInteraction.Ignore))
-                { controller.Move(target-transform.position); if((transform.position-target).sqrMagnitude<0.01f) { climbing=null; climbEndUntil=Time.time+.54f; } }
+                Vector3 lift = new Vector3(transform.position.x, target.y+.10f, transform.position.z);
+                if(ClearAt(lift) && ClearAt(target) && Physics.Raycast(target+Vector3.up*.1f,Vector3.down,.2f,
+                    ~(1<<gameObject.layer),QueryTriggerInteraction.Ignore))
+                {
+                    var wall = climbing.GetComponent<BoxCollider>();
+                    Vector3 edge = wall.ClosestPoint(lift);
+                    MantleEdge = new Vector3(edge.x, target.y, edge.z);
+                    mantleStart = transform.position;
+                    mantleLanding = target;
+                    mantleElapsed = 0f;
+                    mantling = true;
+                    Facing.rotation = Quaternion.LookRotation(-climbing.Normal);
+                }
                 return true;
             }
-            controller.Move(Vector3.up*Mathf.Min(climbAxes.y*climbSpeed*dt,target.y-transform.position.y));
+            controller.Move(Vector3.up*Mathf.Min(climbAxes.y*climbSpeed*dt,grabHeight-transform.position.y));
             return true;
+        }
+
+        private void MoveMantle(float dt)
+        {
+            if (climbing == null) { mantling = false; return; }
+            jumpPending = false;
+            mantleElapsed += dt;
+            float phase = Mathf.Clamp01(MantleProgress);
+            Vector3 high = new Vector3(mantleStart.x, mantleLanding.y+.10f, mantleStart.z);
+            Vector3 across = mantleLanding + Vector3.up*.10f;
+            Vector3 desired = phase < .50f
+                ? Vector3.Lerp(mantleStart, high, Mathf.SmoothStep(0f, 1f, phase/.50f))
+                : phase < .87f
+                    ? Vector3.Lerp(high, across, Mathf.SmoothStep(0f, 1f, (phase-.50f)/.37f))
+                    : Vector3.Lerp(across, mantleLanding, Mathf.SmoothStep(0f, 1f, (phase-.87f)/.13f));
+            controller.Move(desired-transform.position);
+            if (phase < 1f && (desired-transform.position).sqrMagnitude < .04f) return;
+            mantling = false;
+            climbing = null;
+            climbReattachAt = Time.time+.30f;
         }
 
         public Transform Facing => visual != null ? visual : transform;
@@ -295,6 +363,8 @@ namespace TwoTails.Prototype
 
         private void Update()
         {
+            if (mantling && climbing != null) { MoveMantle(Time.deltaTime); return; }
+            mantling = false;
             if(GetComponent<AnimalMechanicsActor>()?.Locked==true){ClearRope();ClearPendingInput();return;}
             if (transform.position.y < resetHeight)
             {
@@ -317,7 +387,8 @@ namespace TwoTails.Prototype
                 else
                 {
                     jumpPending = false;
-                    gripDirection = Vector3.Dot(direction, Facing.forward);
+                    float intent = Vector3.Dot(direction, Facing.forward);
+                    if (Mathf.Abs(intent) > .1f) gripDirection = intent;
                     if (Time.unscaledTime >= nextGripSend)
                     {
                         grip.Submit(this, true, direction);

@@ -41,7 +41,7 @@ namespace TwoTails.Prototype
         {
             PrototypeLever target = FindTarget(out _);
             if (target == null || !target.TryToggle()) return false;
-            GetComponent<PrototypeMotor>()?.ShowInteraction();
+            motor.ShowInteraction(target, target.TargetOpen);
             return true;
         }
 

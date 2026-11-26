@@ -111,7 +111,80 @@ Material diagnosis: every inspected original Renderer uses URP/Lit with a NULL B
 
 Assets/Art/Finished Animation/{Fox,Monkey,Otter,Beaver,Rabbit,Elephant} is prepared and empty: no experimental asset is classified as finished. Subsequent animal tasks read this section, Animation_Source_Inventory.txt, that animal's FBX/material preview, then relevant gameplay code only. Recheck import inventory when files/settings change. First remaining preparation check: render the independent material previews, compare scarf/colors, capture the complete Console message and confirm source clip/Avatar counts unchanged. Then wait for the user's named animal instruction.
 
+## Otter production pass — 2026-11-26
+
+### Fox locomotion transfer, ascent and grip gait follow-up
+
+Otter Run, Jump_Start, Jump_Air and Jump_Land now use sampled Fox rest-relative rotations on 25 matching Otter nodes, with reduced tail and lower limb amplitude. Unity verified their original Fox durations of 0.533, 0.267, 0.467 and 0.667 seconds and their loop flags. All four are Otter-owned rotation-only clips. Existing Otter clip GUIDs were retained. No Fox clip is directly referenced by Otter.
+
+Fox and Otter Push and Pull each use a hold/step blend tree at 0 and 1.2 m/s. Negative grip intent selects Pull and neutral input retains the active direction. Measured planar displacement controls blending so a blocked actor can settle into the hold. Otter Dive_Loop uses measured upward travel to pitch the visual and eases back to its neutral mount at the surface. Unity confirmed the four blend trees and controlled pool descent to Y=-3.0. The ascent trace produced no samples. Short-hop, moving landing, full push and pull cycles, contact and slide checks, and ascent alignment still require interactive scene verification.
+
+Source inventory: Assets/Prefabs/Otter.fbx imports rest plus the Unity-generated preview of rest. No Otter test FBX was found. All clips below are newly authored Generic rotation curves on the original Otter hierarchy, using Fox run timing and interaction rhythm as references. No imported Fox motion was copied onto the Otter rig. Original rig, importer and source material files were preserved.
+
+| New Otter clip | Seconds | Loop |
+| --- | ---: | --- |
+| Idle | 2.00 | Yes |
+| Sit | 2.40 | Yes |
+| Run | 0.54 | Yes |
+| Jump_Start | 0.25 | No |
+| Jump_Air | 0.54 | Yes |
+| Jump_Land | 0.36 | No |
+| Interact | 0.67 | No |
+| Death | 0.65 | No |
+| Swim_Start | 0.32 | No |
+| Swim_Loop | 0.68 | Yes |
+| Swim_Stop_Idle | 1.70 | Yes |
+| Dive_Loop | 0.63 | Yes |
+| Dive_Stop_Idle | 1.90 | Yes |
+| Push | 0.68 | Yes |
+| Pull | 0.68 | Yes |
+
+Delivery: Assets/Art/Finished Animation/Otter/Resources/TwoTailsOtterVisual.prefab, Otter.controller and OtterAvatar.asset. Existing Preview_URP links Otter BakedMaterial_baseColor. Root motion is disabled. Walk has no separate gameplay speed or state. Water exit blends to the existing land/air motion, with no dedicated exit mechanic. Interact uses a forepaw reach; actual lever handle contact remains unverified.
+
+Unity sampled nine baked mesh frames per clip and reported the expected loop flags. This does not establish rendered pose or scarf quality. In SplitScreen, a controlled species assignment and move into Swimming Pool produced Swim_Start; subsequent Animator playback confirmed Otter_Swim_Stop_Idle. Scripted motor and swim input requested Swim_Loop, Dive_Loop at Y=-2.20, Dive_Stop_Idle, and Swim_Stop_Idle at Y=-1.40 on surfacing. Lobby exchange attempt returned Already playing Fox; normal swap and Lobby Sit, rendered land and water sequences, exit, rapid starts and stops, forepaw contact and Host/Client verification remain pending.
+
+## Fox production pass — 2026-11-26
+
+### Paw lever and blend follow-up
+
+The controller has no Any State transitions and the Fox driver already skips duplicate requests. Rapid alternating Idle/Run requests could interrupt each other's fades. The Fox driver now lets an in-flight locomotion blend settle before switching direction, with 0.13 s general and 0.07 s takeoff/landing fades. Actual jump and locomotion playback still require a trace with a spawned player.
+
+The existing Fox_Interact asset is the underlying weight-shift pose. Accepted local or network lever interaction now carries the lever reference. Fox presentation reaches toward the handle grip centered 0.45 m above the pivot using rotation-only foreleg IK. The handle moves from 0.19 to 0.43 s into the visual gesture. Door demand stays on the original accepted-use path. Unity loaded the scripts, but no player was spawned in the measured OnlineTest session. Reach, penetration, phase timing, lobby exchange and video remain unverified.
+
+### Scale and state follow-up
+
+The prefab root was scaled uniformly to 1.22 in the visual asset. Side-by-side instantiated prefab bounds in the OnlineTest Play Mode scene measured Fox 0.789 × 1.281 × 1.651 m and Monkey 0.860 × 1.180 × 1.703 m. Both mesh bases were at Y≈0 with their visual anchors at Y=0. These are geometric probes, not a rendered comparison or lobby check.
+
+The previous Interact source matched the production hierarchy paths but included 129 position and 129 scale curves. The new Fox_Interact.anim transfers relative bone rotations to the production rest pose. Across 13 samples, local bone translation and scale deltas were zero and rotation reached 23.6 degrees. Visual blending and normal interaction still require gameplay inspection.
+
+Fox previously used controller grounding to choose airborne motion during grip follow-through, with no grip-specific Motion. Active grips now select Fox_Push even at zero movement. Fox uses 0.08 s takeoff and landing fades and 0.11 s for other transitions. Landing can interrupt Jump_Start, while walking off an edge directly requests Jump_Air. Push contact, short-hop timing, Bite_Hold and independent Host/Client acceptance remain pending. Online Host failed to start due to the Netcode missing NetworkManager error and an alternate port retry timed out.
+
+Recursive Prefabs search found Fox_character.fbx (rest only) and Fox_animated_All_animation.fbx (nine named takes). The latter supplies the skin and six selected source takes plus Jump_Air. Idle1 and xiuwen are unused candidates. The independent Resources/TwoTailsFoxVisual.prefab, Fox.controller and Generic FoxAvatar.asset are under Assets/Art/Finished Animation/Fox. The existing Fox Preview_URP material provides the Base Map. Root motion is off.
+
+| State | Take | Seconds | Loop and delivery |
+| --- | --- | ---: | --- |
+| Idle | fox_mon_xiaohuli_01_idle | 1.667 | Looping copy |
+| Sit | fox_mon_xiaohuli_01_sit | 1.333 | Looping copy, lobby |
+| Run | fox_mon_xiaohuli_01_run | 0.533 | Looping copy |
+| Jump_Start | wolf_jump_start | 0.267 | Direct, once |
+| Jump_Air | wolf_jump_loop | 0.467 | Looping copy |
+| Jump_Land | wolf_jump_end | 0.667 | Direct, once |
+| Interact | Interact from Fox_Interact_test_v1.fbx | 0.708 | Direct, once |
+| Death | wolf_dead | 1.267 | Direct, once. Existing reset is immediate and presentation window is 0.65 s |
+
+No distinct walk state. Fox is eligible for the common grip mechanics, but dedicated Push and Pull poses are pending. The current lever interaction has no Fox bite hold/release state or mouth contact target, so Bite_Hold remains pending.
+
+Unity generated a valid Generic Avatar and eight controller states. Verified OnlineTest localhost Host spawn as Fox, actual Idle playback, the bound Fox Base Map and a skinned bounds minimum of Y=0.032 against Y=0.040 for the player anchor. The subsequent exchange probes returned Already playing Fox and Please wait, so lobby Sit and a successful round trip are unverified. The remaining takes require posed and rendered inspection, including scarf appearance, and the full Run, jump, ledge fall, Interact, grip and death sequences plus independent Client playback still require scene verification.
+
 ## Monkey production pass — 2026-11-26
+
+### Grip pose and Mixamo mantle follow-up
+
+Monkey, Fox and Otter Push/Pull states use 0.68 s hold and step motions. Push lowers the head; Pull raises the head and uses reverse stepping. Local presentation reads actual gripped box displacement, with actor displacement as the fallback when there is no local grip target. Unity generated the clip and state references. After reconnecting the Editor bridge, a controlled probe at the real Weight 2 box confirmed all three species could grip, request Push and Pull, and release to Idle. The probe supplied the pull intent directly. Interactive box movement, stop and restart gait timing remain unverified.
+
+Assets/Extra/Ch14_nonPBR@Braced Hang To Crouch.fbx imports a 1.133 s take. Seven pose samples showed braced hang, hips rising while the lead hand initially stays close to its start, then legs coming up into crouch. The reference starts in braced hang and has no separate preceding wall-climb cycle. The standalone Monkey_Climb_End.anim is a hand-authored 0.84 s rotation-only adaptation of those phases on the original Monkey rig. The existing state references it. CharacterController now stages rise, traversal and settle after the grab-height and clearance checks, with forepaw IK targeting the edge during the support phase.
+
+Controlled SplitScreen Play Mode tests attached Monkey at the grab height on the real Air Catch Vine and Vine Wall, then invoked the normal mantle checks and advanced the controller at 0.02 s per step. Each started and completed in 43 steps with a 0.010 m landing offset. This verifies the root path under the tested setup. Normal climb-to-mantle input, side-view hand slip, mesh intersection, Animator return and occupied landing checks remain pending.
 
 ### Runtime contact follow-up
 

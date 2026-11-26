@@ -1,7 +1,7 @@
 using UnityEngine;
 namespace TwoTails.Prototype
 {
- public enum PrototypeMotion { Idle, Run, Jump, Fall, Climb, Interact, Ability, Rope, Wall_Hang_Idle, Climb_End, Vine_Climb, Push, Pull, Death }
+ public enum PrototypeMotion { Idle, Run, Jump, Fall, Climb, Interact, Ability, Rope, Wall_Hang_Idle, Climb_End, Vine_Climb, Push, Pull, Death, Swim_Start, Swim_Loop, Swim_Stop_Idle, Dive_Loop, Dive_Stop_Idle }
  public enum PrototypeSpecies { Fox, Monkey, Otter, Beaver, Rabbit, Elephant }
  public sealed class PrototypeAnimal : MonoBehaviour
  {
@@ -15,7 +15,7 @@ namespace TwoTails.Prototype
   {
    if (!TryGetComponent<PrototypeMotor>(out var motor)) return;
    var mount = motor.Facing;
-   MonkeyPresentation.Show(gameObject, mount, mount.GetComponent<Renderer>(), species == PrototypeSpecies.Monkey, Motion);
+   MonkeyPresentation.Show(gameObject, mount, mount.GetComponent<Renderer>(), species, Motion);
   }
   private MaterialPropertyBlock colors;
   private void Start()=>Apply(species);

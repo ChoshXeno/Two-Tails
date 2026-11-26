@@ -2,6 +2,34 @@
 
 Last updated November 26, 2026 (Malaysia time).
 
+## Monkey forepaw orientation — 2026-11-26
+
+Unity pose sampling found backward-pointing forepaws early in Monkey Climb_End and upward-pointing forepaws in Push. Baked bilateral wrist compensation into the existing Climb_End and four Push/Pull clips, and added wrist alignment after mantle reach IK. At 27 samples per clip, both forepaw toe vectors had a forward component of at least 0.91. Side-view gameplay acceptance remains pending.
+
+## Three-animal grip poses and Monkey mantle — 2026-11-26
+
+Updated the existing Push/Pull states for Monkey, Fox and Otter with low-head push, raised-head pull and box-displacement blend input. Sampled the original Mixamo Braced Hang To Crouch FBX and hand-authored an in-place Monkey Climb_End. In SplitScreen, controlled top-edge tests on Air Catch Vine and Vine Wall each entered mantle and finished about 0.010 m from the authored landing in 43 steps of 0.02 s. At the real Weight 2 box, a controlled probe confirmed Push, Pull and release to Idle for all three species. Side-on paw contact and interactive gait sequences remain unverified. See the animation audit for scope.
+
+## Otter locomotion and Fox/Otter grip gait — 2026-11-26
+
+Baked Fox Run and three jump phases onto the Otter rest skeleton. Fox and Otter now blend grip poses and stepping from measured player displacement. Otter ascent pitches the visual along upward travel and smooths back at the surface. Unity inspected all four blend trees and rotation-only baked clips. A controlled SplitScreen pool dive reached Y=-3.0, but the ascent trace contained no visual samples. Full gameplay grip, locomotion and ascent visual acceptance remains pending.
+
+## Otter animation and water presentation — 2026-11-26
+
+Delivered 15 Otter-rig actions, the Otter Animator, Generic Avatar and textured prefab in Assets/Art/Finished Animation/Otter. The existing swimmer now reports surface and underwater motion through the normal species presentation. Unity sampled all clips and the SplitScreen pool probe observed entry, floating playback, movement and dive requests, submerged hold and return to the surface. The normal lobby exchange and rendered character acceptance remain pending. See the animation audit for timings and test scope.
+
+## Fox paw lever and blend follow-up — 2026-11-26
+
+Fox presentation now waits for an active Idle/Run blend before submitting the opposite locomotion request. Accepted lever use passes the actual lever to the paw solver. The ordinary interaction clip supplies the underlying pose and the left foreleg follows the moving handle grip. Door demand remains immediate. Unity loaded the revised scripts. The Play Mode scene returned to OnlineTest without a spawned player after the SplitScreen load attempt, so normal lever use, gameplay transition timing and recording remain unverified.
+
+## Fox scale and animation corrections — 2026-11-26
+
+Fox visual scale is 1.22. The controller uses a rotation-only Interact and a stable Push pose. Active grips override grounding-derived airborne motion; the Fox presentation can enter landing immediately from either airborne animation. In OnlineTest Play Mode a temporary side-by-side prefab probe measured near-zero visual floor offsets and sampled 13 Interact poses with zero bone position or scale change. Host start hit a Netcode missing NetworkManager exception and the alternate port reported timeout, so live player sequences and lobby swap remain unverified. See the audit.
+
+## Fox visual and Animator — 2026-11-26
+
+Implemented the independent Fox prefab, Generic Avatar and controller under Assets/Art/Finished Animation/Fox, with the existing player/lobby species presentation and network motion path. OnlineTest localhost Host showed the Fox Idle take, Fox Base Map, and mesh minimum Y=0.032 against player anchor Y=0.040. See the animation audit for clip mappings and outstanding gameplay checks.
+
 ## Monkey contact and grip block follow-up — 2026-11-26
 
 Implemented wall-normal alignment and a visual standoff in MonkeyPresentation. PrototypeMotor clears wall and rope attachment when gripping and keeps Push selected with neutral input. PrototypeGripBlock now checks support, sweeps downward under gravity, releases grips while falling, replicates position and airborne state, and resets below its start height.

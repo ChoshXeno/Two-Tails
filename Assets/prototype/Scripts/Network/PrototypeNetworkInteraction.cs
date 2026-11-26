@@ -105,11 +105,15 @@ namespace TwoTails.Prototype
             }
 
             string rejection = requested.TryUse(interactionOrigin, player);
-            if (rejection != null) RejectRpc(rejection); else PlayInteractionRpc();
+            if (rejection != null) RejectRpc(rejection); else PlayInteractionRpc(target, requested.DemandOpen);
         }
 
-        [Rpc(SendTo.Owner,InvokePermission=RpcInvokePermission.Server)]
-        private void PlayInteractionRpc() => player.Motor.ShowInteraction();
+        [Rpc(SendTo.Everyone, InvokePermission = RpcInvokePermission.Server)]
+        private void PlayInteractionRpc(NetworkObjectReference target, bool open)
+        {
+            if (target.TryGet(out var lever, NetworkManager))
+                player.Motor.ShowInteraction(lever.GetComponent<PrototypeLever>(), open);
+        }
 
         [Rpc(SendTo.Owner, InvokePermission = RpcInvokePermission.Server)]
         private void RejectRpc(string message)
