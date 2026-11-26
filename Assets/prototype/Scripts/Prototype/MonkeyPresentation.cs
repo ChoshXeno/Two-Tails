@@ -8,11 +8,14 @@ namespace TwoTails.Prototype
         private static GameObject prefab;
         private static GameObject foxPrefab;
         private static GameObject otterPrefab;
+        private static GameObject beaverPrefab;
+        private static GameObject rabbitPrefab;
         private PrototypeSpecies modelSpecies;
         private GameObject model;
         private Animator animator;
         private string current;
         private float releaseAt;
+        private bool rabbitRejumpRestarted;
         private Transform foxPaw;
         private Transform[] foxPawChain;
         private Vector3 lastVisualPosition;
@@ -29,7 +32,9 @@ namespace TwoTails.Prototype
             bool monkey = species == PrototypeSpecies.Monkey;
             bool fox = species == PrototypeSpecies.Fox;
             bool otter = species == PrototypeSpecies.Otter;
-            bool supported = monkey || fox || otter;
+            bool beaver = species == PrototypeSpecies.Beaver;
+            bool rabbit = species == PrototypeSpecies.Rabbit;
+            bool supported = monkey || fox || otter || beaver || rabbit;
             var visual = owner.GetComponent<MonkeyPresentation>();
             if (visual == null)
             {
@@ -51,13 +56,17 @@ namespace TwoTails.Prototype
                 if (monkey && prefab == null) prefab = Resources.Load<GameObject>("TwoTailsMonkeyVisual");
                 if (fox && foxPrefab == null) foxPrefab = Resources.Load<GameObject>("TwoTailsFoxVisual");
                 if (otter && otterPrefab == null) otterPrefab = Resources.Load<GameObject>("TwoTailsOtterVisual");
-                var selectedPrefab = monkey ? prefab : fox ? foxPrefab : otterPrefab;
+                if (beaver && beaverPrefab == null) beaverPrefab = Resources.Load<GameObject>("TwoTailsBeaverVisual");
+                if (rabbit && rabbitPrefab == null) rabbitPrefab = Resources.Load<GameObject>("TwoTailsRabbitVisual");
+                var selectedPrefab = monkey ? prefab : fox ? foxPrefab : otter ? otterPrefab : beaver ? beaverPrefab : rabbitPrefab;
                 if (selectedPrefab == null)
                 {
                     if (placeholder != null) placeholder.enabled = true;
                     return;
                 }
                 visual.model = Instantiate(selectedPrefab, mount);
+                if (rabbit && !lobby)
+                    visual.model.transform.localScale *= 2f;
                 visual.modelSpecies = species;
                 visual.hasVisualPosition = false;
                 visual.model.transform.localRotation = Quaternion.identity;
@@ -203,7 +212,7 @@ namespace TwoTails.Prototype
 
         private void Play(string requested)
         {
-            if (modelSpecies is PrototypeSpecies.Fox or PrototypeSpecies.Otter)
+            if (modelSpecies is PrototypeSpecies.Fox or PrototypeSpecies.Otter or PrototypeSpecies.Beaver or PrototypeSpecies.Rabbit)
             {
                 PlayFox(requested);
                 return;
@@ -232,24 +241,43 @@ namespace TwoTails.Prototype
 
         private void PlayFox(string motion)
         {
+            bool rabbitRejump = modelSpecies == PrototypeSpecies.Rabbit && motion == "Rejump";
+            bool restartRabbitTakeoff = rabbitRejump && !rabbitRejumpRestarted;
+            if (modelSpecies == PrototypeSpecies.Rabbit)
+            {
+                if (rabbitRejump) motion = "Jump_Start";
+                else rabbitRejumpRestarted = false;
+            }
             bool locomotion = motion == "Idle" || motion == "Run";
             string next = motion;
-            if (motion == "Jump")
+            if (restartRabbitTakeoff)
+                next = "Jump_Start";
+            else if (motion == "Jump")
                 next = current == "Jump_Air" || (current == "Jump_Start" && Time.time >= releaseAt)
                     ? "Jump_Air" : "Jump_Start";
             else if (motion == "Fall")
                 next = "Jump_Air";
-            else if (locomotion && (current == "Jump_Start" || current == "Jump_Air"))
+            else if (locomotion && (current == "Jump_Start" || current == "Jump_Air" || current == "Rejump"))
                 next = "Jump_Land";
             else if (locomotion && current == "Jump_Land" && Time.time < releaseAt)
                 return;
 
-            if (next == current) return;
+            if (next == current && !restartRabbitTakeoff) return;
             int state = Animator.StringToHash("Base Layer." + modelSpecies + "_" + next);
             if (!animator.HasState(0, state)) return;
+            // Re-enter the same takeoff state at time zero for Rabbit's second jump.
+            // Rabbit's gameplay state remains Jump_Start through the rest of airtime.
+            if (restartRabbitTakeoff)
+            {
+                animator.Play(state, 0, 0f);
+                current = next;
+                rabbitRejumpRestarted = true;
+                releaseAt = Time.time + .16f;
+                return;
+            }
             if (next == "Jump_Start") releaseAt = Time.time + .20f;
             if (next == "Jump_Land") releaseAt = Time.time + .22f;
-            float blend = next == "Jump_Start" || next == "Jump_Land" ? .07f : .13f;
+            float blend = next is "Jump_Start" or "Jump_Land" or "Rejump" ? .07f : .13f;
             if (locomotion && next != "Jump_Land" && animator.IsInTransition(0) &&
                 current is "Idle" or "Run") return;
             animator.CrossFadeInFixedTime(state, blend, 0);

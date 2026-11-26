@@ -21,6 +21,7 @@ namespace TwoTails.Prototype
         [SerializeField, Tooltip("Scale the temporary capsule visual for Rabbit. Disable for a correctly sized model.")]
         private bool scaleRabbitPlaceholder = true;
         private int jumpsUsed;
+        private float rabbitTakeoffUntil;
         private bool rabbit;
         private float standingHeight, standingRadius, standingStep, standingSkin;
         private Vector3 standingCenter, visualScale, visualPosition;
@@ -79,6 +80,13 @@ namespace TwoTails.Prototype
         }
         private float gripDirection;
         private float interactUntil;
+        private float woodUntil;
+        private PrototypeMotion woodMotion;
+        internal void ShowWoodAction(PrototypeMotion motion)
+        {
+            woodMotion = motion;
+            woodUntil = Time.time + .62f;
+        }
         internal PrototypeLever InteractionLever { get; private set; }
         internal float InteractionProgress => Mathf.Clamp01(1f - (interactUntil - Time.time) / .667f);
         internal void ShowInteraction(PrototypeLever lever, bool open)
@@ -94,6 +102,29 @@ namespace TwoTails.Prototype
             {
                 var species = GetComponent<PrototypeAnimal>()?.Species;
                 if (species == PrototypeSpecies.Monkey) return MonkeyMotion;
+                if (species == PrototypeSpecies.Rabbit)
+                {
+                    if (Time.time < deathUntil) return PrototypeMotion.Death;
+                    if (!controller.isGrounded)
+                    {
+                        // Use the takeoff cue briefly, then hold the Rabbit airborne
+                        // pose for the rest of the jump. A second accepted impulse
+                        // briefly requests the takeoff cue again.
+                        if (jumpsUsed > 1 && Time.time < rabbitTakeoffUntil)
+                            return PrototypeMotion.Rejump;
+                        if (jumpsUsed > 0 && Time.time < rabbitTakeoffUntil)
+                            return PrototypeMotion.Jump_Start;
+                        return PrototypeMotion.Jump_Air;
+                    }
+                    if (Time.time < interactUntil) return PrototypeMotion.Interact;
+                }
+                if (species == PrototypeSpecies.Beaver)
+                {
+                    if (Time.time < deathUntil) return PrototypeMotion.Death;
+                    if (Time.time < woodUntil) return woodMotion;
+                    if (IsGripping) return gripDirection < -.1f ? PrototypeMotion.Pull : PrototypeMotion.Push;
+                    if (Time.time < interactUntil && controller.isGrounded) return PrototypeMotion.Interact;
+                }
                 if (species == PrototypeSpecies.Otter)
                 {
                     if (Time.time < deathUntil) return PrototypeMotion.Death;
@@ -410,6 +441,7 @@ namespace TwoTails.Prototype
             if (jump)
             {
                 jumpsUsed++;
+                if (rabbit) rabbitTakeoffUntil = Time.time + .16f;
                 verticalSpeed = Mathf.Sqrt(2f * gravity * jumpHeight * (rabbit ? rabbitJumpMultiplier : 1f));
             }
             AnimalMechanicsWorld.Instance?.RequestHeavyPush(this, direction);

@@ -2,6 +2,66 @@
 
 Last updated November 26, 2026 (Malaysia time).
 
+## Rabbit stable airborne follow-up — 2026-11-27
+
+Restored Rabbit's intended state order: Jump_Start on takeoff, Jump_Air after the short takeoff window, and Jump_Start replayed once for an accepted second jump. Inspection of Rabbit_Jump_Air.anim confirms a 0.36 s rotation-only clip with Loop Time enabled. User specified keeping source frames 2–4 and looping that segment. The Editor is currently unreachable, so the clip has not yet been cropped or seam-checked. Completed follow-up: Unity API froze all 168 curves at source frame 3 (60 fps), holding the selected airborne pose in a 0.6 s loop with no animated vertical motion. GUID retained. Editor connection succeeded outside the sandbox; prior unreachable reports were sandbox-related. Rendered gameplay acceptance remains pending.
+
+## Rabbit jump presentation — 2026-11-26
+
+Rabbit briefly plays Jump_Start on takeoff, then returns to Jump_Air; an accepted second jump reports Rejump briefly and restarts Rabbit_Jump_Start once. Other species' jump routing is unchanged. The runtime selection was code-checked, but a live Play Mode jump trace has not yet been observed. See the 2026-11-27 follow-up for the current stable-air pose work.
+
+## Rabbit Idle reference skeleton — 2026-11-26
+
+Replaced the adjusted seated pose in Rabbit_Seated_Idle with the original Bunny_character neutral pose across 41 matching bones. Added only a 0.4-degree lower spine breathing cycle and visual floor compensation. Unity sampled the 2.6 s loop with less than 0.4 mm difference between sampled front and rear toe heights and no head rotation change. Source skin weights and ribbon-area upper-body pose were retained. Gameplay rendering remains unchecked.
+
+## Rabbit seated posture and ribbon — 2026-11-26
+
+Adjusted Rabbit_Seated_Idle to raise the head and straighten the back using coordinated torso motion, retaining the breathing loop. Unity pose sampling measured about 0.11 m of head lift before floor compensation. No ribbon bones or weights were edited. A UV-based upper rear ribbon proxy measured approximately 2.4% edge-length change at the 95th percentile, with isolated edges around 15%. The proxy does not confirm zero stretch or in-game clearance. Side-view visual acceptance remains pending.
+
+## Rabbit seated gameplay idle — 2026-11-26
+
+Replaced the former standalone Rabbit_Idle clip with Rabbit_Seated_Idle, a 2.6 s forward-facing seated breathing loop. Verified the existing Rabbit Idle state plays the new clip and removed the old standalone asset. Unity sampled 25 poses and measured near-zero floor deviation. Lobby Sit remains separate.
+
+## Rabbit standing and landing pose — 2026-11-26
+
+Adjusted Rabbit_Idle and Rabbit_Jump_Land to lift the head and reach the forepaws down and slightly forward. Recalibrated the animated skin floor after the edit. Unity midpoint samples had mesh floor Y=0.000 and front-to-rear toe bone differences of 0.048 m in Idle and 0.032 m in Jump_Land. The newly enlarged presentation scale was retained. Rendered gameplay remains unchecked.
+
+## Rabbit visual size — 2026-11-26
+
+Increased Rabbit prefab scale to 1.3 and compensated the player-only half-size placeholder mount in presentation. Recalibrated six grounded clips against skinned vertex heights. The player-mount Idle comparison measured Rabbit 0.384 × 0.976 × 0.984 m and Fox 0.634 × 1.785 × 1.664 m. Rabbit mesh min Y was 0.000 m at the visual anchor. CharacterController settings were unchanged. Interactive crawlspace visibility remains unchecked.
+
+## Rabbit visual, animations and double-jump cue — 2026-11-26
+
+Delivered Rabbit prefab, Generic Avatar, textured material binding and nine action states. SplitScreen confirmed Lobby Sit and the normal Fox-to-Rabbit exchange with a 1.0 m collider. A controlled Play Mode presentation probe confirmed Idle, Run, Jump_Start, Jump_Air, Rejump and Jump_Land playback and a zero world offset between visual anchor and Player Root. The natural input trace did not capture a successful jump. See the audit for gameplay checks remaining.
+
+## Otter limb and Beaver torso Run tuning — 2026-11-26
+
+Adjusted rotation curves on 16 Otter forelimb and hindlimb nodes using Beaver stepping as a reference, leaving Otter torso and tail curves intact. Changed only Beaver hips and chest rotations. Both controllers retain the existing 0.533 s loops. Unity pose sampling measured a zero-degree Beaver seam and a 3.54-degree maximum whole-rig Otter seam. Rendered gameplay remains unverified.
+
+## Beaver Run from Fox paw trajectories — 2026-11-26
+
+Replaced the independent stride curves with sampled Fox paw trajectories and pelvis timing, baked through constrained Beaver leg chains. Kept the Beaver visual at 1.7 and the existing 0.533 s Run loop and GUID. Unity sampled 96 poses with mesh minima from 0.003 to 0.016 m relative to the anchor. The largest deviation from a requested paw target was 0.116 m under the joint limits. Rendered gameplay remains unverified.
+
+## Beaver Run stride articulation — 2026-11-26
+
+Refined the existing 0.533 s Beaver Run loop with larger strides and separate upper limb, lower limb and paw curves. The first and last keys share the same pose and slope. At visual scale 1.7, 96 Unity samples placed the lowest mesh point between -0.006 and +0.016 m relative to the visual anchor. Rendered gameplay was not checked.
+
+## Beaver Run from Otter — 2026-11-26
+
+Baked Otter_Run timing and joint motion onto 24 matching Beaver bones, centering the motion on Beaver's rest pose to avoid importing Otter's standing offsets. Kept the existing Run asset GUID and Beaver visual scale of 1.7. Unity verified the 0.533 s loop and sampled mesh minimum Y of -0.007 to +0.018 m across 64 frames. Rendered gameplay was not checked.
+
+## Beaver visual scale and ground pose — 2026-11-26
+
+Set TwoTailsBeaverVisual root scale to 1.7 uniformly. Rebuilt Idle and Run from Beaver's native rest pose after Unity found transferred rear leg deviations of 73° and 101°. New sampled maxima are 1.5° and 16°. Recalibrated visual-skeleton height for Idle, Run, Sit and grip actions. At the new scale, the sampled mesh floor offsets are +13 to +15 mm for Idle/Run and -31 to -21 mm for the grip steps, relative to the visual anchor. Rendered gameplay acceptance is pending.
+
+## Beaver proportions, origin and grip blends — 2026-11-26
+
+Rebuilt the existing Beaver visual prefab with the natural Beaver_character mesh and rig, baked motion onto that rest skeleton, and added grounded skeletal height compensation. Unity measured grounded clip mesh minima from -0.006 to +0.016 m relative to the visual anchor. Restored normal Lobby swap and observed the live Beaver_character Animator with Beaver controller. Forced Animator speed tests selected Beaver hold and step motions only. Controlled wood handlers passed pickup/place/reclaim/place. Interactive grip, side views and repeat Lobby Sit verification remain pending.
+
+## Beaver visual, animation and dam cues — 2026-11-26
+
+Delivered Beaver Generic Avatar, textured visual prefab, Animator and 12 states. Reused its six source actions and authored six missing actions. SplitScreen verified Lobby Sit, Fox-to-Beaver exchange and a controlled pickup/place/reclaim/place sequence through the actual gameplay handlers with correct inventory and dam progress and the expected animation requests. Rendered contact and independent Host/Client verification remain pending. See the animation audit.
+
 ## Monkey forepaw orientation — 2026-11-26
 
 Unity pose sampling found backward-pointing forepaws early in Monkey Climb_End and upward-pointing forepaws in Push. Baked bilateral wrist compensation into the existing Climb_End and four Push/Pull clips, and added wrist alignment after mantle reach IK. At 27 samples per clip, both forepaw toe vectors had a forward component of at least 0.91. Side-view gameplay acceptance remains pending.
@@ -272,4 +332,5 @@ Fox animated FBX is now present with nine clips; no restoration performed. Full 
 Implemented 15 Monkey actions on a copy of its source rig, imported a valid Generic Avatar, added the Animator and routed the Monkey visual through existing local/network species identities. Lobby slots show Monkey Sit while holding Monkey. Finished Animation placeholders are Git-visible. SplitScreen checked Sit, Run/Idle, jump phases, wall hold/climb/top exit and rope hold/climb/swing input. Direct localhost Host used the existing exchange to select Monkey and confirmed its Idle Animator and Base Map. See the animation audit and raw Play Mode notes for scope. Independent Client/Relay, visual contact and loop inspection, and specific Interact/Death/Push/Pull gameplay checks remain pending. No commit or push.
 
 Follow-up probes confirmed transient rope release before regrab and matching sampled start/near-end rotations for all ten looping Unity clips (0.000 degrees at reported precision).
+
 

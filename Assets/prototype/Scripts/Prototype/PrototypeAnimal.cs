@@ -1,7 +1,7 @@
 using UnityEngine;
 namespace TwoTails.Prototype
 {
- public enum PrototypeMotion { Idle, Run, Jump, Fall, Climb, Interact, Ability, Rope, Wall_Hang_Idle, Climb_End, Vine_Climb, Push, Pull, Death, Swim_Start, Swim_Loop, Swim_Stop_Idle, Dive_Loop, Dive_Stop_Idle }
+ public enum PrototypeMotion { Idle, Run, Jump, Fall, Climb, Interact, Ability, Rope, Wall_Hang_Idle, Climb_End, Vine_Climb, Push, Pull, Death, Swim_Start, Swim_Loop, Swim_Stop_Idle, Dive_Loop, Dive_Stop_Idle, Wood_Pickup, Wood_Place, Jump_Start, Jump_Air, Rejump }
  public enum PrototypeSpecies { Fox, Monkey, Otter, Beaver, Rabbit, Elephant }
  public sealed class PrototypeAnimal : MonoBehaviour
  {

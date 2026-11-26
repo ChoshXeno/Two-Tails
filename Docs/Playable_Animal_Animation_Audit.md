@@ -111,6 +111,52 @@ Material diagnosis: every inspected original Renderer uses URP/Lit with a NULL B
 
 Assets/Art/Finished Animation/{Fox,Monkey,Otter,Beaver,Rabbit,Elephant} is prepared and empty: no experimental asset is classified as finished. Subsequent animal tasks read this section, Animation_Source_Inventory.txt, that animal's FBX/material preview, then relevant gameplay code only. Recheck import inventory when files/settings change. First remaining preparation check: render the independent material previews, compare scarf/colors, capture the complete Console message and confirm source clip/Avatar counts unchanged. Then wait for the user's named animal instruction.
 
+## Rabbit production pass — 2026-11-26
+
+Sampled seven takes from Bunny_animated_All_animation.fbx and the rest pose from Bunny_character.fbx on their own skins. No Rabbit test clip or previous finished animation was found. The original Walk is unassigned because the motor has no separate walk state. IdleLieDown and IdleAlertLookAround are unused alternative resting poses. Grip explicitly excludes Rabbit. The source animation imports showed substantial floor-height differences, so selected motions were baked as copies using bone rotations and grounded visual height adjustment where appropriate. Root motion is off.
+
+| Source → state | Seconds | Loop |
+| --- | ---: | --- |
+| rabbit_Idle → Idle | 0.667 | Yes |
+| New sitting pose → Sit | 2.000 | Yes |
+| rabbit_ANIM_Rabbit_Gallop → Run | 0.458 | Yes |
+| rabbit_ANIM_Rabbit_1Hop early phase → Jump_Start | 0.160 | No |
+| rabbit_ANIM_Rabbit_1Hop mid phase → Jump_Air | 0.360 | Yes |
+| rabbit_ANIM_Rabbit_1Hop recovery phase → Jump_Land | 0.240 | No |
+| New head anticipation and push → Interact | 0.500 | No |
+| rabbit_ANIM_Rabbit_Death → Death | 0.708 | No |
+| rabbit_ANIM_Rabbit_1Hop compressed push → Rejump | 0.160 | No |
+
+Delivery: Assets/Art/Finished Animation/Rabbit/Resources/TwoTailsRabbitVisual.prefab with Rabbit.controller, valid Generic RabbitAvatar.asset and Bunny_animated_All_animation Base Map. Runtime uses Jump_Start briefly on takeoff, then Jump_Air through the remainder of flight. An accepted second jump briefly reports Rejump and restarts Jump_Start at frame zero. Rabbit_Jump_Air remains looped (0.36 s); its stable airborne pose and seam still need adjustment in Unity. The controller remains authoritative for movement and jump count. Lever use retains its existing accepted-action timing, with no animation event.
+
+SplitScreen verified Lobby Sit and actual request to swap Fox to Rabbit. CharacterController height was 1.0 m. Earlier controlled presentation probes selected Jump_Start, Jump_Air, Rejump and Jump_Land directly; these predate the current routing. The motor requests Jump_Air after the takeoff window and replays Jump_Start for the second impulse, but this routing and the revised airborne clip have not been exercised in a live Play Mode trace. Actual double-jump and ledge-fall input, lever contact, death/reset, small-hole traversal, rendered shape and independent Host/Client remain pending.
+
+## Beaver production pass — 2026-11-26
+
+### Proportion and grip follow-up
+
+The animated source was proportionally shorter than Beaver_character in its unanimated skin (baked length-to-height about 1.50 versus 1.59). The prefab now uses Beaver_character with unchanged uniform proportions. Motion deltas were rebaked onto its rest skeleton and existing standalone clip GUIDs were retained. Grounded clips add vertical skeletal correction only. Mesh minima relative to the visual anchor sampled from -0.006 to +0.016 m, including Idle, Run and both grip blends. The Player root stayed at unit scale.
+
+The former controller referenced Beaver Push and Pull and had no Override Controller; the reported swim playback was not reproduced. New grips blend hold and stepping on the existing GripSpeed parameter. A controlled Animator probe selected the expected Beaver hold and step at 0 and 1.2 m/s. SplitScreen accepted the lobby exchange and later reported only Beaver_character with the Beaver controller. Controlled wood handlers produced Pickup/Place/Pickup/Place, inventory 1/0/1/0 and dam 0/1/0/1. This did not exercise actual pushing and pulling, rendered floor contact, or repeat Lobby Sit.
+
+Recursive scan found Beaver_character.fbx (rest only) and Beaver_animated_All_animation.fbx (six gameplay candidates). No matching test FBX was found. Output: Assets/Art/Finished Animation/Beaver/Resources/TwoTailsBeaverVisual.prefab and Beaver.controller. The prefab uses the animated source skin, a valid independent Generic Avatar, the Beaver Preview_URP material and Beaver_animated_All_animation Base Map. Root motion is disabled.
+
+| Source → state | Seconds | Delivery |
+| --- | ---: | --- |
+| wolf_idle → Idle | 1.667 | Looping copy |
+| fox_mon_xiaohuli_01_run → Run | 0.533 | Looping copy |
+| wolf_jump_start → Jump_Start | 0.267 | Direct |
+| wolf_jump_loop → Jump_Air | 0.467 | Looping copy |
+| wolf_jump_end → Jump_Land | 0.667 | Direct |
+| wolf_dead → Death | 1.267 | Direct |
+| Beaver_Sit → Sit | 2.200 | New loop |
+| Beaver_Interact → Interact | 0.620 | New one-shot |
+| Beaver_Wood_Pickup → Wood_Pickup | 0.620 | New one-shot for collecting and reclaiming |
+| Beaver_Wood_Place → Wood_Place | 0.620 | New one-shot for deposit |
+| Beaver_Push / Beaver_Pull → Push / Pull | 0.680 each | New directional loops |
+
+Walk has no distinct gameplay state. Unity sampled nine baked skin poses for each state and confirmed clip flags. No rendered judgment was made on the bandage. SplitScreen observed Lobby Sit and successful Fox-to-Beaver exchange with playable Idle. The first timed wood probe hit the wait gate. A reset of only runtime test lock/cooldown allowed the normal successful handlers to run: collect → place → reclaim → place produced Pickup, Place, Pickup, Place requests with inventory 1/0/1/0 and dam progress 0/1/0/1. The cues originate after authoritative success; inventory, slot visuals and water keep their existing update timing. Hand-to-object and exact slot contact timing, rendered animation switching for all four cues, complete dam water rise, land locomotion/jump/ledge fall, ordinary interaction, grip, death and independent Host/Client remain unverified.
+
 ## Otter production pass — 2026-11-26
 
 ### Fox locomotion transfer, ascent and grip gait follow-up
@@ -222,3 +268,4 @@ Six new .gitkeep files under Finished Animation appeared in Git status alongside
 
 Additional Unity import verification: all ten looping clips returned a maximum start/near-end local rotation difference of 0.000 degrees on the imported model at the reported precision. The rope release was observed before the regrab cooldown. No new Console errors since the pre-existing cursor.
 
+`nRabbit Jump_Air follow-up (2026-11-27): froze source frame 3 at 60 fps into a 0.6 s constant airborne hold across all 168 curves using Unity AnimationUtility. Loop enabled, existing asset GUID retained. Removes pose oscillation and extra vertical animation. Gameplay rendering remains pending.

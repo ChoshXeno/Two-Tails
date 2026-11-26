@@ -90,6 +90,8 @@ namespace TwoTails.Prototype
         }
         [Rpc(SendTo.Owner,InvokePermission=RpcInvokePermission.Server)]
         private void MechanicFeedbackRpc(string message)=>GetComponent<AnimalMechanicsActor>().Feedback(message);
+        [Rpc(SendTo.Owner, InvokePermission = RpcInvokePermission.Server)]
+        internal void PlayWoodActionRpc(PrototypeMotion motion) => player.Motor.ShowWoodAction(motion);
         [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
         private void UseLeverRpc(NetworkObjectReference target, RpcParams rpc = default)
         {

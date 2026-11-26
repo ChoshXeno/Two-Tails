@@ -228,7 +228,14 @@ namespace TwoTails.Prototype
     actor.SetHeldLogs(inventory);
     message = $"Wood reclaimed ({next.Progress}/{RequiredLogs})";
    }   else{ResetTest();message="Animal test reset";return true;}
-   next.Revision++;Apply(next);Publish();return true;
+   next.Revision++;Apply(next);Publish();
+   if(species==PrototypeSpecies.Beaver && (IsPickup(id) || id==BuildTarget))
+   {
+    var motion=id==BuildTarget ? PrototypeMotion.Wood_Place : PrototypeMotion.Wood_Pickup;
+    if(networked)actor.GetComponent<PrototypeNetworkInteraction>().PlayWoodActionRpc(motion);
+    else actor.GetComponent<PrototypeMotor>().ShowWoodAction(motion);
+   }
+   return true;
   }
   private bool Safe(Vector3 feet,Transform actor,Transform display)
   {
